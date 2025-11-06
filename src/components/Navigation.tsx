@@ -3,6 +3,7 @@ import { Menu, X, Languages } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import saboLogo from "@/assets/sabo-logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,9 +53,12 @@ const Navigation = () => {
             </div>
 
             {/* Logo */}
-            <div className="text-2xl font-black tracking-tight">
-              <span className="text-foreground">SABO</span>{" "}
-              <span className="text-gold">ARENA</span>
+            <div className="flex items-center">
+              <img 
+                src={saboLogo} 
+                alt="SABO Arena" 
+                className="h-8 w-auto"
+              />
             </div>
 
             {/* Language Switcher & CTA */}
