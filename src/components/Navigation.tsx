@@ -1,18 +1,26 @@
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Languages } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
 
   const navItems = [
-    { label: "HOME", href: "#" },
-    { label: "TOURNAMENTS", href: "#tournaments" },
-    { label: "RANKINGS", href: "#rankings" },
-    { label: "PLAYERS", href: "#players" },
-    { label: "CLUBS", href: "#clubs" },
-    { label: "NEWS", href: "#news" },
+    { label: t("nav.home"), href: "#" },
+    { label: t("nav.tournaments"), href: "#tournaments" },
+    { label: t("nav.rankings"), href: "#rankings" },
+    { label: t("nav.players"), href: "#players" },
+    { label: t("nav.clubs"), href: "#clubs" },
+    { label: t("nav.news"), href: "#news" },
   ];
 
   return (
@@ -49,10 +57,43 @@ const Navigation = () => {
               <span className="text-gold">ARENA</span>
             </div>
 
-            {/* CTA Button */}
-            <Button variant="default" className="hidden lg:inline-flex">
-              DOWNLOAD APP
-            </Button>
+            {/* Language Switcher & CTA */}
+            <div className="flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Languages className="w-5 h-5" />
+                    <span className="absolute -top-1 -right-1 text-xs font-bold text-gold">
+                      {language.toUpperCase()}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-card border-border z-[100]">
+                  <DropdownMenuItem
+                    onClick={() => setLanguage("vi")}
+                    className={`cursor-pointer ${
+                      language === "vi" ? "bg-muted text-gold font-bold" : ""
+                    }`}
+                  >
+                    <span className="mr-2">🇻🇳</span>
+                    Tiếng Việt
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setLanguage("en")}
+                    className={`cursor-pointer ${
+                      language === "en" ? "bg-muted text-gold font-bold" : ""
+                    }`}
+                  >
+                    <span className="mr-2">🇬🇧</span>
+                    English
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <Button variant="default" className="hidden lg:inline-flex">
+                {t("nav.download")}
+              </Button>
+            </div>
             <div className="lg:hidden w-10" /> {/* Spacer for mobile */}
           </div>
         </div>
@@ -79,7 +120,31 @@ const Navigation = () => {
                   {item.label}
                 </a>
               ))}
-              <Button className="w-full mt-6">DOWNLOAD APP</Button>
+              
+              {/* Mobile Language Switcher */}
+              <div className="mt-6 pt-6 border-t border-border">
+                <p className="text-sm text-muted-foreground mb-3 uppercase tracking-wider">
+                  {language === "vi" ? "Ngôn ngữ" : "Language"}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant={language === "vi" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setLanguage("vi")}
+                  >
+                    🇻🇳 Tiếng Việt
+                  </Button>
+                  <Button
+                    variant={language === "en" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setLanguage("en")}
+                  >
+                    🇬🇧 English
+                  </Button>
+                </div>
+              </div>
+              
+              <Button className="w-full mt-6">{t("nav.download")}</Button>
             </div>
           </motion.div>
         )}

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import PlayerCard from "./PlayerCard";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
+import { useLanguage } from "@/contexts/LanguageContext";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -12,6 +13,7 @@ import player4 from "@/assets/player-4.jpg";
 import player5 from "@/assets/player-5.jpg";
 
 const FeaturedPlayers = () => {
+  const { t } = useLanguage();
   const players = [
     {
       name: "Marcus Chen",
@@ -68,9 +70,9 @@ const FeaturedPlayers = () => {
           viewport={{ once: true }}
           className="flex items-center gap-2 text-sm text-muted-foreground mb-8"
         >
-          <span className="text-gold font-bold">SABO ARENA</span>
+          <span className="text-gold font-bold">{t("players.breadcrumb")}</span>
           <span>\</span>
-          <span>TOP PLAYERS</span>
+          <span>{t("players.topPlayers")}</span>
         </motion.div>
 
         {/* Featured Player Spotlight */}
@@ -97,7 +99,7 @@ const FeaturedPlayers = () => {
               <div className="flex flex-col justify-center p-8 lg:p-12 bg-card/50 backdrop-blur-sm">
                 <div className="mb-6">
                   <p className="text-sm font-bold text-gold tracking-widest uppercase mb-4">
-                    Reigning Champion
+                    {t("players.reigningChampion")}
                   </p>
                   <div className="flex items-end gap-4 mb-4">
                     <h2 className="text-5xl md:text-6xl lg:text-7xl font-black">
@@ -112,32 +114,30 @@ const FeaturedPlayers = () => {
                 </div>
 
                 <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                  Undefeated champion with 500+ tournament wins. Known for precision
-                  shots and strategic mastery. Currently holding the world record for
-                  consecutive wins.
+                  {t("players.championDesc")}
                 </p>
 
                 <div className="grid grid-cols-3 gap-6 pb-6 border-b border-border">
                   <div>
                     <p className="text-3xl font-black text-gold">500+</p>
-                    <p className="text-sm text-muted-foreground">Tournament Wins</p>
+                    <p className="text-sm text-muted-foreground">{t("players.tournamentWins")}</p>
                   </div>
                   <div>
                     <p className="text-3xl font-black text-gold">94%</p>
-                    <p className="text-sm text-muted-foreground">Win Rate</p>
+                    <p className="text-sm text-muted-foreground">{t("players.winRate")}</p>
                   </div>
                   <div>
                     <p className="text-3xl font-black text-gold">127</p>
-                    <p className="text-sm text-muted-foreground">Championships</p>
+                    <p className="text-sm text-muted-foreground">{t("players.championships")}</p>
                   </div>
                 </div>
 
                 <div className="mt-6 flex gap-4">
                   <button className="text-sm font-bold text-gold hover:underline uppercase tracking-wider">
-                    View Full Profile →
+                    {t("players.viewProfile")}
                   </button>
                   <button className="text-sm font-bold text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors">
-                    Watch Highlights →
+                    {t("players.watchHighlights")}
                   </button>
                 </div>
               </div>
@@ -154,10 +154,10 @@ const FeaturedPlayers = () => {
             className="mb-8"
           >
             <h2 className="text-4xl md:text-5xl font-black mb-4">
-              TOP <span className="text-gold">RANKED</span> PLAYERS
+              {t("players.topRanked")} <span className="text-gold">{t("players.topRankedFull")}</span>
             </h2>
             <p className="text-muted-foreground text-lg">
-              Meet the elite athletes dominating the championship circuit
+              {t("players.eliteAthletes")}
             </p>
           </motion.div>
 

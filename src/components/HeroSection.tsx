@@ -2,9 +2,11 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Play, ArrowRight } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/hero-player.jpg";
 
 const HeroSection = () => {
+  const { t } = useLanguage();
   return (
     <section className="relative min-h-screen w-full overflow-hidden">
       {/* Background Image with Overlay */}
@@ -29,26 +31,27 @@ const HeroSection = () => {
           >
             <div className="space-y-4">
               <p className="text-gold text-sm font-bold tracking-widest uppercase">
-                Championship
+                {t("hero.championship")}
               </p>
               <h1 className="text-6xl md:text-7xl lg:text-8xl font-black leading-none">
-                <span className="text-foreground">LEVEL PLAY</span>
+                <span className="text-foreground">{t("hero.title1")}</span>
                 <br />
-                <span className="text-gold">AWAITS YOU!</span>
+                <span className="text-foreground">{t("hero.title2")}</span>
+                <br />
+                <span className="text-gold">{t("hero.title3")}</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
-                Join the ultimate billiard championship platform. Compete with elite
-                players, participate in prestigious tournaments, and master your game.
+                {t("hero.description")}
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="text-base font-bold">
-                JOIN TOURNAMENT
+                {t("hero.joinTournament")}
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button size="lg" variant="outline" className="text-base font-bold">
-                VIEW RANKINGS
+                {t("hero.viewRankings")}
               </Button>
             </div>
 
@@ -56,15 +59,15 @@ const HeroSection = () => {
             <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border/50">
               <div>
                 <p className="text-3xl md:text-4xl font-black text-gold">2.5K+</p>
-                <p className="text-sm text-muted-foreground">Active Players</p>
+                <p className="text-sm text-muted-foreground">{t("hero.activePlayers")}</p>
               </div>
               <div>
                 <p className="text-3xl md:text-4xl font-black text-gold">150+</p>
-                <p className="text-sm text-muted-foreground">Tournaments</p>
+                <p className="text-sm text-muted-foreground">{t("hero.tournaments")}</p>
               </div>
               <div>
                 <p className="text-3xl md:text-4xl font-black text-gold">$500K</p>
-                <p className="text-sm text-muted-foreground">Prize Pool</p>
+                <p className="text-sm text-muted-foreground">{t("hero.prizePool")}</p>
               </div>
             </div>
           </motion.div>
@@ -81,17 +84,16 @@ const HeroSection = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs font-bold text-gold tracking-wider uppercase mb-2">
-                    Upcoming Tournament
+                    {t("hero.upcomingTournament")}
                   </p>
                   <h3 className="text-xl font-bold mb-2">
-                    Pro League Finals 2024
+                    {t("hero.proLeagueFinals")}
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Registration closes in 5 days. 64 players competing for $50,000
-                    grand prize.
+                    {t("hero.tournamentDesc")}
                   </p>
                   <Button variant="outline" size="sm" className="font-bold">
-                    JOIN NOW
+                    {t("hero.joinNow")}
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </div>
@@ -109,11 +111,11 @@ const HeroSection = () => {
               </div>
               <div>
                 <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase mb-2">
-                  Highlights
+                  {t("hero.highlights")}
                 </p>
-                <h3 className="text-lg font-bold mb-2">Top Shots of the Week</h3>
+                <h3 className="text-lg font-bold mb-2">{t("hero.topShots")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Watch the most incredible plays from this week's tournaments.
+                  {t("hero.topShotsDesc")}
                 </p>
               </div>
             </Card>
@@ -121,16 +123,16 @@ const HeroSection = () => {
             {/* News Card */}
             <Card className="p-6 border border-border bg-card/90 backdrop-blur-sm hover:shadow-hover hover:scale-105 transition-all duration-300 cursor-pointer">
               <p className="text-xs font-bold text-gold tracking-wider uppercase mb-2">
-                Latest News
+                {t("hero.latestNews")}
               </p>
               <h3 className="text-lg font-bold mb-2">
-                New Championship Rules Announced
+                {t("hero.championshipRules")}
               </h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Tournament committee introduces updated scoring system for 2024 season.
+                {t("hero.rulesDesc")}
               </p>
               <button className="text-sm font-bold text-gold hover:underline flex items-center">
-                READ MORE
+                {t("hero.readMore")}
                 <ArrowRight className="ml-2 w-4 h-4" />
               </button>
             </Card>
@@ -147,7 +149,7 @@ const HeroSection = () => {
       >
         <div className="flex flex-col items-center">
           <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">
-            Scroll to explore
+            {t("hero.scrollExplore")}
           </p>
           <motion.div
             animate={{ y: [0, 10, 0] }}

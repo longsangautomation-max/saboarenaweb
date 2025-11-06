@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Trophy, TrendingUp } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PlayerCardProps {
   name: string;
@@ -12,6 +13,8 @@ interface PlayerCardProps {
 }
 
 const PlayerCard = ({ name, rank, image, winRate, tournaments, index }: PlayerCardProps) => {
+  const { t } = useLanguage();
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
@@ -39,7 +42,7 @@ const PlayerCard = ({ name, rank, image, winRate, tournaments, index }: PlayerCa
           <div>
             <h3 className="text-2xl font-bold mb-1">{name}</h3>
             <p className="text-sm text-muted-foreground uppercase tracking-wider">
-              Professional Player
+              {t("players.professionalPlayer")}
             </p>
           </div>
 
@@ -48,14 +51,14 @@ const PlayerCard = ({ name, rank, image, winRate, tournaments, index }: PlayerCa
               <TrendingUp className="w-4 h-4 text-gold" />
               <div>
                 <p className="text-lg font-bold text-gold">{winRate}%</p>
-                <p className="text-xs text-muted-foreground">Win Rate</p>
+                <p className="text-xs text-muted-foreground">{t("players.winRate")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Trophy className="w-4 h-4 text-gold" />
               <div>
                 <p className="text-lg font-bold text-gold">{tournaments}</p>
-                <p className="text-xs text-muted-foreground">Tournaments</p>
+                <p className="text-xs text-muted-foreground">{t("players.tournaments")}</p>
               </div>
             </div>
           </div>
