@@ -148,10 +148,22 @@ const FeaturedPlayers = () => {
                 </div>
 
                 <div className="mt-6 flex gap-4">
-                  <button className="text-sm font-bold text-gold hover:underline uppercase tracking-wider">
+                  <button 
+                    className="text-sm font-bold text-gold hover:underline uppercase tracking-wider"
+                    onClick={() => {
+                      // Navigate to player profile page
+                      alert(`View profile for ${featuredPlayer?.display_name || 'Player'} - This would navigate to a detailed player profile page.`);
+                    }}
+                  >
                     {t("players.viewProfile")}
                   </button>
-                  <button className="text-sm font-bold text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors">
+                  <button 
+                    className="text-sm font-bold text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors"
+                    onClick={() => {
+                      // Navigate to player highlights
+                      alert(`Watch highlights for ${featuredPlayer?.display_name || 'Player'} - This would open a video gallery of their best plays.`);
+                    }}
+                  >
                     {t("players.watchHighlights")}
                   </button>
                 </div>

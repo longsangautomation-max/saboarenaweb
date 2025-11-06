@@ -48,3 +48,23 @@ export interface Club {
   rating: number | null;
   total_tables: number | null;
 }
+
+export interface News {
+  id: string;
+  title: string;
+  title_en: string | null;
+  slug: string;
+  excerpt: string;
+  excerpt_en: string | null;
+  content: string;
+  content_en: string | null;
+  category: string;
+  author_id: string | null;
+  cover_image_url: string | null;
+  published_at: string;
+  views: number;
+  is_featured: boolean;
+  status: 'draft' | 'published' | 'archived';
+  created_at: string;
+  updated_at: string;
+}

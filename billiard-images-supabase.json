@@ -1,0 +1,21 @@
+{
+  "tournaments": [
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/tournaments/tournaments-2.jpg",
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/tournaments/tournaments-4.jpg"
+  ],
+  "players": [
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/players/players-1.jpg",
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/players/players-3.jpg"
+  ],
+  "techniques": [
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/techniques/techniques-3.jpg"
+  ],
+  "clubs": [
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/clubs/clubs-1.jpg",
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/clubs/clubs-3.jpg"
+  ],
+  "matches": [
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/matches/matches-2.jpg",
+    "https://mogjjvscxjwvhtpkrlqr.supabase.co/storage/v1/object/public/billiard-images/matches/matches-3.jpg"
+  ]
+}

@@ -1,12 +1,39 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Play, ArrowRight } from "lucide-react";
+import { Play, ArrowRight, Calendar, Users, Trophy } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useNextTournament } from "@/hooks/useNextTournament";
+import { useRecentWinner } from "@/hooks/useRecentWinner";
+import { formatCurrency, formatDate, getDisplayName } from "@/lib/helpers";
+import { Skeleton } from "@/components/ui/skeleton";
+import AppDownloadButtons from "@/components/AppDownloadButtons";
+import AppDownloadModal from "@/components/AppDownloadModal";
+import { useAppDownloadModal } from "@/hooks/useAppDownloadModal";
 import heroImage from "@/assets/hero-player.jpg";
+import { useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const { data: nextTournament, isLoading: isLoadingNext } = useNextTournament();
+  const { data: recentWinner, isLoading: recentWinnerLoading, error: recentWinnerError } = useRecentWinner();
+  const { openModal } = useAppDownloadModal();
+  
+  const handleJoinTournament = () => {
+    console.log('Button clicked - handleJoinTournament');
+    // Show professional modal for app download
+    openModal({
+      title: t("app.downloadTitle"),
+      description: t("app.downloadDescription")
+    });
+    console.log('Modal opened');
+  };
+
+  const handleViewRankings = () => {
+    navigate('/rankings');
+  };
+  
   return (
     <section className="relative min-h-screen w-full overflow-hidden">
       {/* Background Image with Overlay */}
@@ -46,13 +73,27 @@ const HeroSection = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="text-base font-bold">
+              <Button size="lg" className="text-base font-bold" onClick={handleJoinTournament}>
                 {t("hero.joinTournament")}
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
-              <Button size="lg" variant="outline" className="text-base font-bold">
+              <Button size="lg" variant="outline" className="text-base font-bold" onClick={handleViewRankings}>
                 {t("hero.viewRankings")}
               </Button>
+            </div>
+
+            {/* Mobile App Download CTA */}
+            <div className="sm:hidden">
+              <div className="bg-gradient-to-r from-gold/10 to-gold/5 border border-gold/20 rounded-lg p-4">
+                <p className="text-sm font-bold text-gold mb-2">{t("app.getTheApp")}</p>
+                <p className="text-xs text-muted-foreground mb-3">{t("app.betterExperience")}</p>
+                <AppDownloadButtons
+                  variant="outline"
+                  size="sm"
+                  layout="horizontal"
+                  className="w-full"
+                />
+              </div>
             </div>
 
             {/* Stats */}
@@ -81,27 +122,83 @@ const HeroSection = () => {
           >
             {/* Tournament Card */}
             <Card className="p-6 border-2 border-gold bg-card/90 backdrop-blur-sm hover:shadow-hover hover:scale-105 transition-all duration-300 cursor-pointer">
-              <div className="flex items-start justify-between">
+              {isLoadingNext ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              ) : nextTournament ? (
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-gold tracking-wider uppercase mb-2">
+                      {t("hero.upcomingTournament")}
+                    </p>
+                    <h3 className="text-xl font-bold mb-2">
+                      {nextTournament.title}
+                    </h3>
+                    <div className="space-y-2 mb-4">
+                      <p className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gold" />
+                        {formatDate(nextTournament.start_date)}
+                      </p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Users className="w-4 h-4 text-gold" />
+                        {nextTournament.current_participants}/{nextTournament.max_participants} {t("tournaments.participants")}
+                      </p>
+                      {Boolean(nextTournament.prize_pool) && (
+                        <p className="text-sm font-bold text-gold flex items-center gap-2">
+                          <Trophy className="w-4 h-4" />
+                          {formatCurrency(nextTournament.prize_pool)}
+                        </p>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="font-bold border-gold text-gold hover:bg-gold hover:text-black"
+                      onClick={handleJoinTournament}
+                    >
+                      {t("hero.joinNow")}
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </Button>
+                  </div>
+                  {nextTournament.club?.logo_url && (
+                    <img 
+                      src={nextTournament.club.logo_url} 
+                      alt={nextTournament.club.name}
+                      className="w-12 h-12 rounded-lg object-cover ml-4"
+                    />
+                  )}
+                </div>
+              ) : (
                 <div>
                   <p className="text-xs font-bold text-gold tracking-wider uppercase mb-2">
                     {t("hero.upcomingTournament")}
                   </p>
                   <h3 className="text-xl font-bold mb-2">
-                    {t("hero.proLeagueFinals")}
+                    {t("tournaments.noUpcoming")}
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     {t("hero.tournamentDesc")}
                   </p>
-                  <Button variant="outline" size="sm" className="font-bold">
-                    {t("hero.joinNow")}
+                  <Button variant="outline" size="sm" className="font-bold" onClick={handleJoinTournament}>
+                    {t("nav.tournaments")}
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </div>
-              </div>
+              )}
             </Card>
 
             {/* Video Card */}
-            <Card className="p-6 border border-border bg-card/90 backdrop-blur-sm hover:shadow-hover hover:scale-105 transition-all duration-300 cursor-pointer group">
+            <Card 
+              className="p-6 border border-border bg-card/90 backdrop-blur-sm hover:shadow-hover hover:scale-105 transition-all duration-300 cursor-pointer group"
+              onClick={() => {
+                // Open video player or navigate to highlights page
+                alert("Video highlights would open here. This could link to YouTube or a custom video player.");
+              }}
+            >
               <div className="relative rounded-lg overflow-hidden mb-4 aspect-video bg-muted">
                 <div className="absolute inset-0 bg-gradient-to-tr from-background/80 to-transparent flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-gold/90 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -120,21 +217,52 @@ const HeroSection = () => {
               </div>
             </Card>
 
-            {/* News Card */}
+            {/* Recent Winner Card */}
             <Card className="p-6 border border-border bg-card/90 backdrop-blur-sm hover:shadow-hover hover:scale-105 transition-all duration-300 cursor-pointer">
               <p className="text-xs font-bold text-gold tracking-wider uppercase mb-2">
                 {t("hero.latestNews")}
               </p>
-              <h3 className="text-lg font-bold mb-2">
-                {t("hero.championshipRules")}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                {t("hero.rulesDesc")}
-              </p>
-              <button className="text-sm font-bold text-gold hover:underline flex items-center">
-                {t("hero.readMore")}
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </button>
+              {recentWinnerLoading ? (
+                <div className="space-y-3">
+                  <div className="h-4 bg-muted animate-pulse rounded" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-3/4" />
+                  <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
+                </div>
+              ) : recentWinnerError || !recentWinner ? (
+                <>
+                  <h3 className="text-lg font-bold mb-2">
+                    {t("hero.championshipRules")}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {t("hero.rulesDesc")}
+                  </p>
+                  <button 
+                    className="text-sm font-bold text-gold hover:underline flex items-center"
+                    onClick={() => {
+                      // Create a modal or navigate to rules page
+                      alert(t("hero.rulesDesc") || "Tournament rules and regulations will be displayed here.");
+                    }}
+                  >
+                    {t("hero.readMore")}
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold mb-2">
+                    🏆 {recentWinner.winner ? getDisplayName(recentWinner.winner.display_name, recentWinner.winner.username) : 'Champion'} Wins!
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {recentWinner.title}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                  </p>
+                  <div className="text-sm font-bold text-gold flex items-center">
+                    Champion
+                    <Trophy className="ml-2 w-4 h-4" />
+                  </div>
+                </>
+              )}
             </Card>
           </motion.div>
         </div>
@@ -160,6 +288,8 @@ const HeroSection = () => {
           </motion.div>
         </div>
       </motion.div>
+      
+      <AppDownloadModal />
     </section>
   );
 };

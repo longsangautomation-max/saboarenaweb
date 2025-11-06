@@ -5,11 +5,32 @@ import { formatCurrency, formatDate } from "@/lib/helpers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import AppDownloadButtons from "@/components/AppDownloadButtons";
+import { useAppDownloadModal } from "@/hooks/useAppDownloadModal";
 import { Calendar, MapPin, Users, Trophy, Coins } from "lucide-react";
 
 const UpcomingTournaments = () => {
   const { t } = useLanguage();
   const { data: tournaments, isLoading, error } = useUpcomingTournaments(6);
+  const { openModal } = useAppDownloadModal();
+
+  const handleTournamentRegister = (tournamentId: string, tournamentName: string) => {
+    // Show professional modal for app download
+    openModal({
+      title: t("tournaments.registerTitle") || "Đăng ký giải đấu",
+      description: `${t("tournaments.registerDescription") || "Tải app SABO Arena để đăng ký tham gia"} "${tournamentName}"`
+    });
+  };
+
+  const handleViewAllTournaments = () => {
+    // Navigate to tournaments page or scroll to tournaments section
+    const tournamentsSection = document.getElementById('tournaments');
+    if (tournamentsSection) {
+      tournamentsSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      alert("Navigate to tournaments page - This would show all upcoming and past tournaments.");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -155,6 +176,7 @@ const UpcomingTournaments = () => {
               <Button 
                 className="w-full bg-gold text-black hover:bg-gold/90 font-bold py-3"
                 disabled={tournament.current_participants >= tournament.max_participants}
+                onClick={() => handleTournamentRegister(tournament.id, tournament.title)}
               >
                 {tournament.current_participants >= tournament.max_participants 
                   ? t("tournaments.full")
@@ -171,15 +193,30 @@ const UpcomingTournaments = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
           viewport={{ once: true }}
-          className="text-center mt-12"
+          className="text-center mt-12 space-y-6"
         >
           <Button
             variant="outline"
             size="lg"
             className="border-gold text-gold hover:bg-gold hover:text-black transition-all duration-300"
+            onClick={handleViewAllTournaments}
           >
             {t("tournaments.viewAll")}
           </Button>
+          
+          {/* Mobile App CTA */}
+          <div className="lg:hidden max-w-md mx-auto">
+            <div className="bg-gradient-to-r from-gold/10 to-gold/5 border border-gold/20 rounded-lg p-4">
+              <p className="text-sm font-bold text-gold mb-1">{t("app.getTheApp")}</p>
+              <p className="text-xs text-muted-foreground mb-3">{t("tournaments.mobileAppPromo")}</p>
+              <AppDownloadButtons
+                variant="outline"
+                size="sm"
+                layout="horizontal"
+                className="w-full"
+              />
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

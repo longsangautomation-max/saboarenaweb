@@ -1,26 +1,52 @@
 import { useState } from "react";
-import { Menu, X, Languages } from "lucide-react";
+import { Menu, X, Languages, User, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import AuthModal from "@/components/AuthModal";
+import { PremiumStoreButtons } from "@/components/PremiumStoreButtons";
 import saboLogo from "@/assets/sabo-logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const { language, setLanguage, t } = useLanguage();
+  const { user, signOut } = useAuth();
+  const location = useLocation();
+
+  const handleNavClick = (href: string) => {
+    if (href.startsWith("#")) {
+      // Nếu là hash link và đang ở trang chủ
+      if (location.pathname === "/") {
+        const element = document.querySelector(href);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+          setIsMenuOpen(false);
+        }
+      } else {
+        // Nếu không ở trang chủ, chuyển về trang chủ với hash
+        window.location.href = "/" + href;
+      }
+    }
+  };
 
   const navItems = [
-    { label: t("nav.home"), href: "#" },
+    { label: t("nav.home"), href: "/" },
     { label: t("nav.tournaments"), href: "#tournaments" },
-    { label: t("nav.rankings"), href: "#rankings" },
+    { label: t("nav.rankings"), href: "/rankings" },
+    { label: "Live Matches", href: "/live-matches" },
     { label: t("nav.players"), href: "#players" },
-    { label: t("nav.clubs"), href: "#clubs" },
+    { label: t("nav.clubs"), href: "/clubs" },
     { label: t("nav.news"), href: "#news" },
   ];
 
@@ -41,14 +67,31 @@ const Navigation = () => {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-8">
               {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="text-sm font-semibold text-muted-foreground hover:text-gold transition-colors relative group"
-                >
-                  {item.label}
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
-                </a>
+                item.href.startsWith("/") && !item.href.startsWith("/#") ? (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    className="text-sm font-semibold text-muted-foreground hover:text-gold transition-colors relative group"
+                  >
+                    {item.label}
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+                  </Link>
+                ) : (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    onClick={(e) => {
+                      if (item.href.startsWith("#")) {
+                        e.preventDefault();
+                        handleNavClick(item.href);
+                      }
+                    }}
+                    className="text-sm font-semibold text-muted-foreground hover:text-gold transition-colors relative group cursor-pointer"
+                  >
+                    {item.label}
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
+                  </a>
+                )
               ))}
             </div>
 
@@ -61,7 +104,7 @@ const Navigation = () => {
               />
             </div>
 
-            {/* Language Switcher & CTA */}
+            {/* Language Switcher & Auth */}
             <div className="flex items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -93,10 +136,43 @@ const Navigation = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
-              <Button variant="default" className="hidden lg:inline-flex">
-                {t("nav.download")}
-              </Button>
+
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name || user.email} />
+                        <AvatarFallback className="bg-gold/20 text-gold">
+                          {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-2 py-1.5 text-sm font-medium text-foreground">
+                      {user.user_metadata?.full_name || user.email}
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">{t("nav.profile")}</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={signOut}>
+                      {t("auth.signOut")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={() => setShowAuthModal(true)}>
+                    {t("auth.signIn")}
+                  </Button>
+                  <Button variant="default" onClick={() => setShowAuthModal(true)} className="hidden lg:inline-flex">
+                    {t("auth.signUp")}
+                  </Button>
+                </>
+              )}
             </div>
             <div className="lg:hidden w-10" /> {/* Spacer for mobile */}
           </div>
@@ -115,14 +191,32 @@ const Navigation = () => {
           >
             <div className="p-6 space-y-4">
               {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block text-lg font-semibold text-foreground hover:text-gold transition-colors py-3 border-b border-border"
-                >
-                  {item.label}
-                </a>
+                item.href.startsWith("/") && !item.href.startsWith("/#") ? (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block text-lg font-semibold text-foreground hover:text-gold transition-colors py-3 border-b border-border"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    onClick={(e) => {
+                      if (item.href.startsWith("#")) {
+                        e.preventDefault();
+                        handleNavClick(item.href);
+                      } else {
+                        setIsMenuOpen(false);
+                      }
+                    }}
+                    className="block text-lg font-semibold text-foreground hover:text-gold transition-colors py-3 border-b border-border cursor-pointer"
+                  >
+                    {item.label}
+                  </a>
+                )
               ))}
               
               {/* Mobile Language Switcher */}
@@ -148,7 +242,16 @@ const Navigation = () => {
                 </div>
               </div>
               
-              <Button className="w-full mt-6">{t("nav.download")}</Button>
+              <div className="mt-6">
+                <p className="text-sm text-muted-foreground mb-3 uppercase tracking-wider">
+                  {t("app.getTheApp")}
+                </p>
+                <PremiumStoreButtons
+                  size="sm"
+                  layout="vertical"
+                  className="w-full"
+                />
+              </div>
             </div>
           </motion.div>
         )}
@@ -166,6 +269,13 @@ const Navigation = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultTab="login"
+      />
     </>
   );
 };
