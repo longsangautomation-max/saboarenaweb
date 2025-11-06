@@ -1,18 +1,32 @@
 {
-  "routes": [
+  "rewrites": [
     {
-      "src": "/.well-known/assetlinks.json",
-      "dest": "/assetlinks.json",
-      "headers": {
-        "Content-Type": "application/json"
-      }
+      "source": "/.well-known/assetlinks.json",
+      "destination": "/assetlinks.json"
     },
     {
-      "src": "/.well-known/apple-app-site-association",
-      "dest": "/apple-app-site-association",
-      "headers": {
-        "Content-Type": "application/json"
-      }
+      "source": "/.well-known/apple-app-site-association",
+      "destination": "/apple-app-site-association"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assetlinks.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "source": "/apple-app-site-association",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     }
   ]
 }
