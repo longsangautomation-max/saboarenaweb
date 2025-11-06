@@ -16,7 +16,7 @@ const translations = {
     "nav.home": "TRANG CHỦ",
     "nav.tournaments": "GIẢI ĐẤU",
     "nav.rankings": "BXH",
-    "nav.players": "CẦU THỦ",
+    "nav.players": "CƠ THỦ",
     "nav.clubs": "CÂU LẠC BỘ",
     "nav.news": "TIN TỨC",
     "nav.download": "TẢI ỨNG DỤNG",
@@ -49,7 +49,7 @@ const translations = {
 
     // Featured Players
     "players.breadcrumb": "SABO ARENA",
-    "players.topPlayers": "CẦU THỦ HÀNG ĐẦU",
+    "players.topPlayers": "CƠ THỦ HÀNG ĐẦU",
     "players.reigningChampion": "Nhà Vô Địch Đương Nhiệm",
     "players.championDesc": "Nhà vô địch bất bại với hơn 500 chiến thắng giải đấu. Nổi tiếng với những cú đánh chính xác và chiến thuật bậc thầy. Hiện đang giữ kỷ lục thế giới về số trận thắng liên tiếp.",
     "players.tournamentWins": "Chiến Thắng",
@@ -58,9 +58,9 @@ const translations = {
     "players.viewProfile": "Xem Hồ Sơ Đầy Đủ →",
     "players.watchHighlights": "Xem Điểm Nổi Bật →",
     "players.topRanked": "XẾP HẠNG",
-    "players.topRankedFull": "CẦU THỦ",
-    "players.eliteAthletes": "Gặp gỡ những vận động viên xuất sắc thống trị đấu trường giải đấu",
-    "players.professionalPlayer": "Cầu Thủ Chuyên Nghiệp",
+    "players.topRankedFull": "CƠ THỦ",
+    "players.eliteAthletes": "Gặp gỡ những cơ thủ xuất sắc thống trị đấu trường giải đấu",
+    "players.professionalPlayer": "Cơ Thủ Chuyên Nghiệp",
     "players.tournaments": "Giải Đấu",
   },
   en: {
