@@ -12,6 +12,9 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const translations = {
   vi: {
+    // Common
+    "common.language": "vi",
+    
     // Navigation
     "nav.home": "TRANG CHỦ",
     "nav.tournaments": "GIẢI ĐẤU",
@@ -62,6 +65,7 @@ const translations = {
     "players.eliteAthletes": "Gặp gỡ những cơ thủ xuất sắc thống trị đấu trường giải đấu",
     "players.professionalPlayer": "Cơ Thủ Chuyên Nghiệp",
     "players.tournaments": "Giải Đấu",
+    "players.noPlayers": "Không tìm thấy cơ thủ nào",
 
     // Privacy Policy
     "privacy.title": "Chính Sách Quyền Riêng Tư",
@@ -178,6 +182,9 @@ const translations = {
     "deleteAccount.error": "Lỗi",
   },
   en: {
+    // Common
+    "common.language": "en",
+    
     // Navigation
     "nav.home": "HOME",
     "nav.tournaments": "TOURNAMENTS",
@@ -228,6 +235,7 @@ const translations = {
     "players.eliteAthletes": "Meet the elite athletes dominating the championship circuit",
     "players.professionalPlayer": "Professional Player",
     "players.tournaments": "Tournaments",
+    "players.noPlayers": "No players found",
 
     // Privacy Policy
     "privacy.title": "Privacy Policy",

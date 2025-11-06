@@ -3,54 +3,52 @@ import PlayerCard from "./PlayerCard";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTopPlayers } from "@/hooks/useTopPlayers";
+import { useRankSystem } from "@/hooks/useRankSystem";
+import { calculateWinRate, getDisplayName, getRankColor } from "@/lib/helpers";
+import { Skeleton } from "@/components/ui/skeleton";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import featuredPlayer from "@/assets/featured-player-1.jpg";
-import player2 from "@/assets/player-2.jpg";
-import player3 from "@/assets/player-3.jpg";
-import player4 from "@/assets/player-4.jpg";
-import player5 from "@/assets/player-5.jpg";
 
 const FeaturedPlayers = () => {
   const { t } = useLanguage();
-  const players = [
-    {
-      name: "Marcus Chen",
-      rank: 1,
-      image: featuredPlayer,
-      winRate: 94,
-      tournaments: 127,
-    },
-    {
-      name: "Alex Rodriguez",
-      rank: 2,
-      image: player2,
-      winRate: 91,
-      tournaments: 105,
-    },
-    {
-      name: "Sarah Mitchell",
-      rank: 3,
-      image: player3,
-      winRate: 89,
-      tournaments: 98,
-    },
-    {
-      name: "James Park",
-      rank: 4,
-      image: player4,
-      winRate: 87,
-      tournaments: 112,
-    },
-    {
-      name: "David Kim",
-      rank: 5,
-      image: player5,
-      winRate: 85,
-      tournaments: 89,
-    },
-  ];
+  const { data: players, isLoading, error } = useTopPlayers(10);
+  const { data: rankSystem } = useRankSystem();
+
+  if (isLoading) {
+    return (
+      <section className="py-24 relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <Skeleton className="h-12 w-64 mb-8" />
+          <Skeleton className="h-96 w-full mb-16 rounded-2xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-96 rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || !players || players.length === 0) {
+    return (
+      <section className="py-24 relative overflow-hidden">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-muted-foreground text-lg">
+            {t("players.noPlayers") || "No players found"}
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const featuredPlayer = players[0];
+  const featuredPlayerWinRate = calculateWinRate(featuredPlayer.total_wins, featuredPlayer.total_losses);
+  const featuredPlayerName = getDisplayName(featuredPlayer.display_name, featuredPlayer.username);
+  const featuredPlayerColor = getRankColor(featuredPlayer.rank, rankSystem);
 
   return (
     <section className="py-24 relative overflow-hidden">
@@ -88,8 +86,8 @@ const FeaturedPlayers = () => {
               {/* Player Image */}
               <div className="relative aspect-square lg:aspect-auto">
                 <img
-                  src={featuredPlayer}
-                  alt="Marcus Chen - Reigning Champion"
+                  src={featuredPlayer.avatar_url || "/placeholder.svg"}
+                  alt={`${featuredPlayerName} - ${t("players.reigningChampion")}`}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/50" />
@@ -98,12 +96,29 @@ const FeaturedPlayers = () => {
               {/* Player Info */}
               <div className="flex flex-col justify-center p-8 lg:p-12 bg-card/50 backdrop-blur-sm">
                 <div className="mb-6">
-                  <p className="text-sm font-bold text-gold tracking-widest uppercase mb-4">
-                    {t("players.reigningChampion")}
-                  </p>
+                  <div className="flex items-center gap-3 mb-4">
+                    <p className="text-sm font-bold text-gold tracking-widest uppercase">
+                      {t("players.reigningChampion")}
+                    </p>
+                    {featuredPlayer.rank && (
+                      <span 
+                        className="px-3 py-1 rounded-full text-xs font-black uppercase"
+                        style={{ 
+                          backgroundColor: featuredPlayerColor + '20',
+                          color: featuredPlayerColor,
+                          border: `2px solid ${featuredPlayerColor}`
+                        }}
+                      >
+                        {t("common.language") === "vi" 
+                          ? rankSystem?.find(r => r.rank_code === featuredPlayer.rank)?.rank_name_vi || featuredPlayer.rank
+                          : featuredPlayer.rank
+                        }
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-end gap-4 mb-4">
                     <h2 className="text-5xl md:text-6xl lg:text-7xl font-black">
-                      Marcus Chen
+                      {featuredPlayerName}
                     </h2>
                   </div>
                   <div className="inline-block">
@@ -119,15 +134,15 @@ const FeaturedPlayers = () => {
 
                 <div className="grid grid-cols-3 gap-6 pb-6 border-b border-border">
                   <div>
-                    <p className="text-3xl font-black text-gold">500+</p>
+                    <p className="text-3xl font-black text-gold">{featuredPlayer.tournament_wins || 0}</p>
                     <p className="text-sm text-muted-foreground">{t("players.tournamentWins")}</p>
                   </div>
                   <div>
-                    <p className="text-3xl font-black text-gold">94%</p>
+                    <p className="text-3xl font-black text-gold">{featuredPlayerWinRate}%</p>
                     <p className="text-sm text-muted-foreground">{t("players.winRate")}</p>
                   </div>
                   <div>
-                    <p className="text-3xl font-black text-gold">127</p>
+                    <p className="text-3xl font-black text-gold">{featuredPlayer.total_tournaments}</p>
                     <p className="text-sm text-muted-foreground">{t("players.championships")}</p>
                   </div>
                 </div>
@@ -175,11 +190,25 @@ const FeaturedPlayers = () => {
             }}
             className="!pb-12"
           >
-            {players.map((player, index) => (
-              <SwiperSlide key={player.rank}>
-                <PlayerCard {...player} index={index} />
-              </SwiperSlide>
-            ))}
+            {players.slice(0, 10).map((player, index) => {
+              const winRate = calculateWinRate(player.total_wins, player.total_losses);
+              const displayName = getDisplayName(player.display_name, player.username);
+              
+              return (
+                <SwiperSlide key={player.id}>
+                  <PlayerCard 
+                    name={displayName}
+                    rank={index + 1}
+                    image={player.avatar_url || "/placeholder.svg"}
+                    winRate={winRate}
+                    tournaments={player.total_tournaments}
+                    index={index}
+                    playerRank={player.rank}
+                    rankSystem={rankSystem}
+                  />
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
         </div>
       </div>

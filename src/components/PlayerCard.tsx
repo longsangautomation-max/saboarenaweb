@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Trophy, TrendingUp } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import type { RankSystem } from "@/types/database";
+import { getRankColor } from "@/lib/helpers";
 
 interface PlayerCardProps {
   name: string;
@@ -10,10 +12,16 @@ interface PlayerCardProps {
   winRate: number;
   tournaments: number;
   index: number;
+  playerRank?: string | null;
+  rankSystem?: RankSystem[];
 }
 
-const PlayerCard = ({ name, rank, image, winRate, tournaments, index }: PlayerCardProps) => {
+const PlayerCard = ({ name, rank, image, winRate, tournaments, index, playerRank, rankSystem }: PlayerCardProps) => {
   const { t } = useLanguage();
+  const rankColor = getRankColor(playerRank, rankSystem);
+  const rankDisplay = t("common.language") === "vi" 
+    ? rankSystem?.find(r => r.rank_code === playerRank)?.rank_name_vi || playerRank
+    : playerRank;
   
   return (
     <motion.div
@@ -40,7 +48,21 @@ const PlayerCard = ({ name, rank, image, winRate, tournaments, index }: PlayerCa
 
         <div className="p-6 space-y-4">
           <div>
-            <h3 className="text-2xl font-bold mb-1">{name}</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-2xl font-bold">{name}</h3>
+              {playerRank && (
+                <span 
+                  className="px-2 py-1 rounded text-xs font-black uppercase"
+                  style={{ 
+                    backgroundColor: rankColor + '20',
+                    color: rankColor,
+                    border: `1px solid ${rankColor}`
+                  }}
+                >
+                  {rankDisplay}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground uppercase tracking-wider">
               {t("players.professionalPlayer")}
             </p>
