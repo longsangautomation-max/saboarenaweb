@@ -1,6 +1,7 @@
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import FeaturedPlayers from "@/components/FeaturedPlayers";
+import UpcomingTournaments from "@/components/UpcomingTournaments";
 
 const Index = () => {
   return (
@@ -9,6 +10,7 @@ const Index = () => {
       <main>
         <HeroSection />
         <FeaturedPlayers />
+        <UpcomingTournaments />
       </main>
     </div>
   );

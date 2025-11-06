@@ -22,3 +22,12 @@ export const getRankColor = (rank: string | null, rankSystem?: RankSystem[]): st
 export const getDisplayName = (displayName: string | null, username: string | null): string => {
   return displayName || username || 'Unknown Player';
 };
+
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+};

@@ -50,6 +50,17 @@ const translations = {
     "hero.rulesDesc": "Ban tổ chức giải đấu giới thiệu hệ thống tính điểm cập nhật cho mùa giải 2024.",
     "hero.readMore": "ĐỌC THÊM",
 
+    // Tournaments
+    "tournaments.upcoming": "GIẢI ĐẤU SẮP DIỄN RA",
+    "tournaments.upcomingDescription": "Tham gia những giải đấu đẳng cấp quốc tế với những cơ thủ xuất sắc nhất",
+    "tournaments.noUpcoming": "Hiện tại chưa có giải đấu nào sắp diễn ra",
+    "tournaments.participants": "Người Tham Gia", 
+    "tournaments.prize": "Giải Thưởng",
+    "tournaments.entryFee": "Phí Tham Gia",
+    "tournaments.register": "ĐĂNG KÝ",
+    "tournaments.full": "ĐÃ ĐẦY",
+    "tournaments.viewAll": "XEM TẤT CẢ",
+
     // Featured Players
     "players.breadcrumb": "SABO ARENA",
     "players.topPlayers": "CƠ THỦ HÀNG ĐẦU",
@@ -217,8 +228,19 @@ const translations = {
     "hero.topShotsDesc": "Watch the most incredible plays from this week's tournaments.",
     "hero.latestNews": "Latest News",
     "hero.championshipRules": "New Championship Rules Announced",
-    "hero.rulesDesc": "Tournament committee introduces updated scoring system for 2024 season.",
+    "hero.rulesDesc": "Tournament organizers introduce updated scoring system for the 2024 season.",
     "hero.readMore": "READ MORE",
+
+    // Tournaments
+    "tournaments.upcoming": "UPCOMING TOURNAMENTS",
+    "tournaments.upcomingDescription": "Join world-class tournaments with the best players globally",
+    "tournaments.noUpcoming": "No upcoming tournaments at the moment",
+    "tournaments.participants": "Participants",
+    "tournaments.prize": "Prize Pool",
+    "tournaments.entryFee": "Entry Fee", 
+    "tournaments.register": "REGISTER",
+    "tournaments.full": "FULL",
+    "tournaments.viewAll": "VIEW ALL",
 
     // Featured Players
     "players.breadcrumb": "SABO ARENA",
