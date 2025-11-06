@@ -1,12 +1,12 @@
 {
-  "functions": {
-    "api/.well-known/assetlinks.json.js": {
-      "memory": 128,
-      "maxDuration": 10
+  "rewrites": [
+    {
+      "source": "/.well-known/assetlinks.json",
+      "destination": "/api/.well-known/assetlinks.json"
     },
-    "api/.well-known/apple-app-site-association.js": {
-      "memory": 128,
-      "maxDuration": 10
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "destination": "/api/.well-known/apple-app-site-association"
     }
-  }
+  ]
 }
