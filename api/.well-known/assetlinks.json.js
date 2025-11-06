@@ -1,0 +1,13 @@
+export default function handler(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json([{
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.saboarena.app",
+      "sha256_cert_fingerprints": [
+        "9C:EC:F6:1D:67:1E:7C:26:AC:71:90:EE:C2:6F:6E:7F:FF:6E:FD:65:E8:61:CE:4F:DB:DB:91:15:37:C6:BD:95"
+      ]
+    }
+  }]);
+}

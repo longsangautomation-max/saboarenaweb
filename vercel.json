@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "api/.well-known/assetlinks.json.js": {
+      "memory": 128,
+      "maxDuration": 10
+    },
+    "api/.well-known/apple-app-site-association.js": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  }
+}
