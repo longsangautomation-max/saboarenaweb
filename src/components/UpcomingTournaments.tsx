@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AppDownloadButtons from "@/components/AppDownloadButtons";
 import { useAppDownloadModal } from "@/hooks/useAppDownloadModal";
-import { Calendar, MapPin, Users, Trophy, Coins } from "lucide-react";
+import { Calendar, MapPin, Users, Trophy, Coins, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const UpcomingTournaments = () => {
   const { t } = useLanguage();
   const { data: tournaments, isLoading, error } = useUpcomingTournaments(6);
   const { openModal } = useAppDownloadModal();
+  const navigate = useNavigate();
 
   const handleTournamentRegister = (tournamentId: string, tournamentName: string) => {
     // Show professional modal for app download
@@ -20,6 +22,10 @@ const UpcomingTournaments = () => {
       title: t("tournaments.registerTitle") || "Đăng ký giải đấu",
       description: `${t("tournaments.registerDescription") || "Tải app SABO Arena để đăng ký tham gia"} "${tournamentName}"`
     });
+  };
+
+  const handleViewDetails = (tournamentId: string) => {
+    navigate(`/tournaments/${tournamentId}`);
   };
 
   const handleViewAllTournaments = () => {
@@ -172,17 +178,30 @@ const UpcomingTournaments = () => {
                 </div>
               </div>
 
-              {/* Register Button */}
-              <Button 
-                className="w-full bg-gold text-black hover:bg-gold/90 font-bold py-3"
-                disabled={tournament.current_participants >= tournament.max_participants}
-                onClick={() => handleTournamentRegister(tournament.id, tournament.title)}
-              >
-                {tournament.current_participants >= tournament.max_participants 
-                  ? t("tournaments.full")
-                  : t("tournaments.register")
-                }
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                {/* View Details Button */}
+                <Button 
+                  variant="outline"
+                  className="flex-1 border-gold/30 text-gold hover:bg-gold/10"
+                  onClick={() => handleViewDetails(tournament.id)}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Xem chi tiết
+                </Button>
+
+                {/* Register Button */}
+                <Button 
+                  className="flex-1 bg-gold text-black hover:bg-gold/90 font-bold"
+                  disabled={tournament.current_participants >= tournament.max_participants}
+                  onClick={() => handleTournamentRegister(tournament.id, tournament.title)}
+                >
+                  {tournament.current_participants >= tournament.max_participants 
+                    ? t("tournaments.full")
+                    : t("tournaments.register")
+                  }
+                </Button>
+              </div>
             </motion.div>
           ))}
         </div>

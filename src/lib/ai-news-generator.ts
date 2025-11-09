@@ -1,17 +1,40 @@
 /**
  * AI News Generator - Tự động tạo tin tức từ database events
- * Sử dụng OpenAI GPT-4 để viết bài chi tiết
+ * Sử dụng OpenAI GPT-4 qua secure server-side proxy
  */
 
-import OpenAI from 'openai';
 import { supabaseAdmin } from './supabase-admin';
 import { getCoverImageForNews, getCategoryImages } from './billiard-images';
 
-// OpenAI Configuration
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // Chỉ dùng cho demo, production nên dùng server-side
-});
+// API Endpoint for secure OpenAI proxy
+const AI_API_ENDPOINT = import.meta.env.VITE_AI_API_ENDPOINT || '/api/generate-news';
+
+/**
+ * Call OpenAI securely via server-side proxy
+ */
+async function callOpenAI(prompt: string, options = {}) {
+  const response = await fetch(AI_API_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      prompt,
+      model: 'gpt-4',
+      temperature: 0.7,
+      max_tokens: 2000,
+      ...options
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to generate content');
+  }
+
+  const data = await response.json();
+  return data.content;
+}
 
 /**
  * Tự động chèn 2-4 ảnh vào content
@@ -313,50 +336,26 @@ export async function generateNews(params: NewsGenerationParams): Promise<Genera
   const viPrompt = buildPrompt(templateConfig.prompt, data);
   
   console.log('🤖 Generating Vietnamese content...');
-  console.log('🎭 Persona:', viPrompt.match(/Bạn đang nhập vai: (.+?) -/)?.[1] || 'Random');
   
-  const viCompletion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini', // Rẻ hơn nhiều so với gpt-4-turbo-preview
-    messages: [
-      {
-        role: 'system',
-        content: `Bạn là một người viết bài chuyên nghiệp, biết cách nhập vai và viết theo nhiều phong cách khác nhau. 
-        Bạn viết bài về bi-a rất hấp dẫn, có cá tính riêng, biết khi nào nên hài hước, khi nào nên nghiêm túc.
-        Bạn luôn thêm cảm xúc và quan điểm cá nhân vào bài viết để người đọc cảm thấy gần gũi.
-        KHÔNG cần đánh dấu vị trí ảnh [IMAGE:...], hệ thống sẽ tự động chèn ảnh.`
-      },
-      {
-        role: 'user',
-        content: viPrompt
-      }
-    ],
+  // Call OpenAI securely via proxy
+  const content = await callOpenAI(viPrompt, {
+    model: 'gpt-4o-mini',
     temperature: 0.9,
     max_tokens: 1800
   });
-  
-  const content = viCompletion.choices[0].message.content || '';
   
   // Tự động chèn 2-4 ảnh vào content
   const contentWithImages = insertImagesIntoContent(content, templateConfig.category);
   
   // Generate title
-  const titleCompletion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini', // Dùng model rẻ cho task đơn giản
-    messages: [
-      {
-        role: 'system',
-        content: 'Tạo tiêu đề tin tức hấp dẫn, ngắn gọn (max 80 ký tự), có SEO tốt.'
-      },
-      {
-        role: 'user',
-        content: `Dựa vào nội dung sau, tạo tiêu đề:\n\n${content.substring(0, 500)}`
-      }
-    ],
-    temperature: 0.9,
-    max_tokens: 50
+  const titlePrompt = `Dựa vào nội dung bài viết sau, hãy tạo một tiêu đề hấp dẫn, ngắn gọn (tối đa 80 ký tự), SEO-friendly:\n\n${content.substring(0, 500)}...`;
+  
+  const title = await callOpenAI(titlePrompt, {
+    model: 'gpt-4o-mini',
+    temperature: 0.7,
+    max_tokens: 100
   });
   
-  const title = titleCompletion.choices[0].message.content?.trim() || 'Tin Tức Mới';
   const slug = createSlug(title);
   const excerpt = extractExcerpt(content);
   
@@ -366,41 +365,20 @@ export async function generateNews(params: NewsGenerationParams): Promise<Genera
   if (generateEnglish) {
     console.log('🤖 Generating English content...');
     
-    const enCompletion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Dùng model rẻ cho translation
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a professional translator. Translate Vietnamese billiards news to English, keeping the tone and structure.'
-        },
-        {
-          role: 'user',
-          content: `Translate this to English:\n\n${contentWithImages}`
-        }
-      ],
+    const enPrompt = `Translate this Vietnamese billiards news to English, keeping the tone and structure:\n\n${contentWithImages}`;
+    content_en = await callOpenAI(enPrompt, {
+      model: 'gpt-4o-mini',
       temperature: 0.7,
       max_tokens: 1800
     });
     
-    content_en = enCompletion.choices[0].message.content || '';
-    
-    const titleEnCompletion = await openai.chat.completions.create({
+    const titleEnPrompt = `Based on this content, create an engaging, concise title (max 80 chars) with good SEO:\n\n${content_en.substring(0, 500)}`;
+    title_en = await callOpenAI(titleEnPrompt, {
       model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'Create an engaging, concise news title (max 80 chars) with good SEO.'
-        },
-        {
-          role: 'user',
-          content: `Based on this content, create a title:\n\n${content_en.substring(0, 500)}`
-        }
-      ],
-      temperature: 0.9,
+      temperature: 0.7,
       max_tokens: 50
     });
     
-    title_en = titleEnCompletion.choices[0].message.content?.trim() || 'Latest News';
     excerpt_en = extractExcerpt(content_en);
   }
   

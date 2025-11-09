@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bracket Test - Giai 64</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0f172a;
+      color: white;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .info {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .link {
+      display: inline-block;
+      background: #f59e0b;
+      color: #000;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: bold;
+      margin: 10px 10px 10px 0;
+    }
+    .link:hover {
+      background: #fbbf24;
+    }
+    code {
+      background: #334155;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h1>🎯 Bracket Visualization Test</h1>
+    <p>Web server is running! Now you can test the bracket visualization.</p>
+    
+    <h2>📊 Available Tournament:</h2>
+    <ul>
+      <li><strong>Name:</strong> giai 64</li>
+      <li><strong>Format:</strong> DE64 (Double Elimination 64)</li>
+      <li><strong>Participants:</strong> 64/64</li>
+      <li><strong>Matches:</strong> 111 matches</li>
+      <li><strong>Rounds:</strong> 9 rounds (4 Winner + 3 Loser + 2 Finals)</li>
+    </ul>
+
+    <h2>🔗 Quick Links:</h2>
+    <a href="http://localhost:8080" class="link">🏠 Home Page</a>
+    <a href="http://localhost:8080/tournaments/bda71012-21b2-437a-9550-7424fee93834" class="link">🏆 View Tournament</a>
+    
+    <h2>📝 Steps to Test:</h2>
+    <ol>
+      <li>Click "View Tournament" link above</li>
+      <li>Click on the <strong>"Bracket"</strong> tab</li>
+      <li>You should see:
+        <ul>
+          <li>✅ Winner Bracket section (4 rounds)</li>
+          <li>✅ Loser Bracket section (3 rounds)</li>
+          <li>✅ Grand Finals section (2 rounds)</li>
+          <li>✅ Match cards with player info and scores</li>
+          <li>✅ Horizontal scroll for large brackets</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h2>🐛 What to Check:</h2>
+    <ul>
+      <li>✓ Data loads without errors</li>
+      <li>✓ Rounds are grouped correctly</li>
+      <li>✓ Match cards display properly</li>
+      <li>✓ Layout looks good on desktop</li>
+      <li>✓ Horizontal scroll works smoothly</li>
+    </ul>
+
+    <h2>💡 Notes:</h2>
+    <ul>
+      <li>Tournament ID: <code>bda71012-21b2-437a-9550-7424fee93834</code></li>
+      <li>Server URL: <code>http://localhost:8080</code></li>
+      <li>Some matches may show "TBD" if players haven't joined yet</li>
+      <li>Live matches will have animated indicators</li>
+    </ul>
+  </div>
+</body>
+</html>

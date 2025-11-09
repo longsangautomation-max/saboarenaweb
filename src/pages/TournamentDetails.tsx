@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TournamentRegistration from "@/components/TournamentRegistration";
 import Navigation from "@/components/Navigation";
+import { DE64BracketVisualization } from "@/components/DE64BracketVisualization";
 import { 
   Calendar, 
   MapPin, 
@@ -199,8 +200,8 @@ const TournamentDetails = () => {
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-4 mb-8">
                   <TabsTrigger value="overview">{t("tournaments.overview")}</TabsTrigger>
-                  <TabsTrigger value="bracket">{t("tournaments.bracket")}</TabsTrigger>
-                  <TabsTrigger value="matches">{t("tournaments.matches")}</TabsTrigger>
+                  <TabsTrigger value="bracket">Bảng đấu</TabsTrigger>
+                  <TabsTrigger value="matches">Trận đấu</TabsTrigger>
                   <TabsTrigger value="participants">{t("tournaments.participants")}</TabsTrigger>
                 </TabsList>
 
@@ -261,37 +262,38 @@ const TournamentDetails = () => {
                   </Card>
                 </TabsContent>
 
-                {/* Bracket Tab */}
+                {/* Bracket Tab - Sơ đồ bảng đấu */}
                 <TabsContent value="bracket" className="space-y-6">
-                  <Card className="p-6 bg-slate-800/50 border-slate-700">
-                    <h3 className="text-xl font-bold text-white mb-4">{t("tournaments.tournamentBracket")}</h3>
-                    {matchesLoading ? (
-                      <div className="space-y-4">
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                        <Skeleton className="h-24 w-full" />
-                      </div>
-                    ) : matches && matches.length > 0 ? (
-                      <div className="space-y-4">
-                        {/* Bracket visualization would go here */}
+                  <Card className="p-0 bg-slate-800/50 border-slate-700 overflow-hidden">
+                    <div className="p-4 border-b border-slate-700 bg-slate-900/50">
+                      <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Target className="w-5 h-5 text-gold" />
+                        Sơ đồ bảng đấu
+                      </h3>
+                      <p className="text-sm text-slate-400 mt-1">
+                        Xem toàn bộ cấu trúc giải đấu với Winner Bracket, Loser Bracket và Grand Finals
+                      </p>
+                    </div>
+                    <div className="h-[calc(100vh-300px)]">
+                      {id ? (
+                        <DE64BracketVisualization tournamentId={id} />
+                      ) : (
                         <div className="text-center py-8 text-slate-400">
                           <Target className="w-12 h-12 mx-auto mb-4" />
-                          <p>{t("tournaments.bracketComingSoon")}</p>
+                          <p>Chưa có bảng đấu</p>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-slate-400">
-                        <Target className="w-12 h-12 mx-auto mb-4" />
-                        <p>{t("tournaments.noBracket")}</p>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </Card>
                 </TabsContent>
 
-                {/* Matches Tab */}
+                {/* Matches Tab - Danh sách trận đấu */}
                 <TabsContent value="matches" className="space-y-6">
                   <Card className="p-6 bg-slate-800/50 border-slate-700">
-                    <h3 className="text-xl font-bold text-white mb-4">{t("tournaments.matchResults")}</h3>
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-gold" />
+                      Danh sách trận đấu
+                    </h3>
                     {matchesLoading ? (
                       <div className="space-y-4">
                         {Array.from({ length: 5 }, (_, i) => i + 1).map((id) => (
