@@ -6,6 +6,7 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { MatchCard } from './MatchCard';
+import { getAdvancementInfo } from '@/lib/bracket-advancement';
 import type { BracketMatch } from '@/types/bracket';
 
 interface FullTournamentViewProps {
@@ -69,7 +70,22 @@ function calculateTreePositions(
       
       const prevRoundMatches = positioned.filter(m => m.round_number === prevRoundNum);
       
-      if (prevRoundMatches.length >= 2) {
+      // Check if this is a "same size" round (e.g., LB-B: 2→2 matches)
+      const isSameSizeRound = roundMatches.length === prevRoundMatches.length;
+      
+      if (isSameSizeRound) {
+        // Same number of matches - position vertically aligned with corresponding prev match
+        const prevMatch = prevRoundMatches[matchIdx];
+        if (prevMatch) {
+          positioned.push({
+            ...currentMatch,
+            x,
+            y: prevMatch.y,
+            height: cardHeight
+          });
+        }
+      } else if (prevRoundMatches.length >= 2) {
+        // Normal bracket - center between 2 previous matches
         const pairStartIdx = matchIdx * 2;
         const prevMatch1 = prevRoundMatches[pairStartIdx];
         const prevMatch2 = prevRoundMatches[pairStartIdx + 1];
@@ -135,14 +151,28 @@ function calculateTreePositionsRTL(
     const currentRoundNum = roundNumbers[roundIdx];
     const prevRoundNum = roundNumbers[roundIdx - 1];
     const roundMatches = rounds[currentRoundNum];
+    const prevRoundMatches = positioned.filter(m => m.round_number === prevRoundNum);
     const x = totalWidth - roundIdx * (cardWidth + horizontalGap); // Flow left
+
+    // FIX: Handle LB-B same-size rounds (2→2→1)
+    const isSameSizeRound = roundMatches.length === prevRoundMatches.length;
 
     for (let matchIdx = 0; matchIdx < roundMatches.length; matchIdx++) {
       const currentMatch = roundMatches[matchIdx];
       
-      const prevRoundMatches = positioned.filter(m => m.round_number === prevRoundNum);
-      
-      if (prevRoundMatches.length >= 2) {
+      if (isSameSizeRound) {
+        // Same size round: vertical alignment (e.g., round 201→202: both have 2 matches)
+        const prevMatch = prevRoundMatches[matchIdx];
+        if (prevMatch) {
+          positioned.push({
+            ...currentMatch,
+            x,
+            y: prevMatch.y, // Align vertically with corresponding previous match
+            height: cardHeight
+          });
+        }
+      } else if (prevRoundMatches.length >= 2) {
+        // Standard elimination: center between two previous matches
         const pairStartIdx = matchIdx * 2;
         const prevMatch1 = prevRoundMatches[pairStartIdx];
         const prevMatch2 = prevRoundMatches[pairStartIdx + 1];
@@ -281,6 +311,305 @@ function renderConnections(
   return connections;
 }
 
+/**
+ * Render Cross Finals connections with 4-CORNER layout
+ * Structure: 4 corners (2 each) → 4 quarters → 2 semis → 1 final
+ * Layout: Symmetric radial convergence to center
+ */
+function renderCrossFinalsConnections(
+  matches: PositionedMatch[],
+  cardWidth: number
+): React.ReactNode[] {
+  const connections: React.ReactNode[] = [];
+  const rounds = groupByRound(matches);
+  const roundNumbers = Object.keys(rounds).map(Number).sort((a, b) => a - b);
+
+  if (roundNumbers.length < 4) return connections; // Need R1(8), R2(4), Semis(2), Final(1)
+
+  const round1 = rounds[roundNumbers[0]] || []; // 8 matches (4 corners × 2)
+  const round2 = rounds[roundNumbers[1]] || []; // 4 matches (quarters)
+  const semis = rounds[roundNumbers[2]] || [];   // 2 matches
+  const final = rounds[roundNumbers[3]] || [];   // 1 match
+
+  console.log('🔗 Cross Finals 4-CORNER Connections:', {
+    round1: round1.length,
+    round2: round2.length,
+    semis: semis.length,
+    final: final.length
+  });
+
+  const findPos = (match: BracketMatch) => matches.find(m => m.id === match.id);
+
+  // === CORNERS → QUARTERS ===
+  
+  // TOP-LEFT CORNER (2 matches) → Top-Left Quarter
+  const topLeft = round1.slice(0, 2);
+  const topLeftQuarter = round2[0];
+  
+  if (topLeftQuarter) {
+    const quarterPos = findPos(topLeftQuarter);
+    if (quarterPos) {
+      topLeft.forEach(cornerMatch => {
+        const pos = findPos(cornerMatch);
+        if (pos) {
+          connections.push(
+            <path
+              key={`${cornerMatch.id}-${topLeftQuarter.id}`}
+              d={createPath(
+                pos.x + cardWidth, // From right edge
+                pos.y + pos.height / 2,
+                quarterPos.x, // To left edge
+                quarterPos.y + quarterPos.height / 2
+              )}
+              stroke="#fbbf24"
+              strokeWidth={2}
+              fill="none"
+              opacity={0.6}
+            />
+          );
+        }
+      });
+    }
+  }
+
+  // TOP-RIGHT CORNER (2 matches) → Top-Right Quarter
+  const topRight = round1.slice(2, 4);
+  const topRightQuarter = round2[1];
+  
+  if (topRightQuarter) {
+    const quarterPos = findPos(topRightQuarter);
+    if (quarterPos) {
+      topRight.forEach(cornerMatch => {
+        const pos = findPos(cornerMatch);
+        if (pos) {
+          connections.push(
+            <path
+              key={`${cornerMatch.id}-${topRightQuarter.id}`}
+              d={createPath(
+                pos.x, // From left edge
+                pos.y + pos.height / 2,
+                quarterPos.x + cardWidth, // To right edge
+                quarterPos.y + quarterPos.height / 2
+              )}
+              stroke="#fbbf24"
+              strokeWidth={2}
+              fill="none"
+              opacity={0.6}
+            />
+          );
+        }
+      });
+    }
+  }
+
+  // BOTTOM-LEFT CORNER (2 matches) → Bottom-Left Quarter
+  const bottomLeft = round1.slice(4, 6);
+  const bottomLeftQuarter = round2[2];
+  
+  if (bottomLeftQuarter) {
+    const quarterPos = findPos(bottomLeftQuarter);
+    if (quarterPos) {
+      bottomLeft.forEach(cornerMatch => {
+        const pos = findPos(cornerMatch);
+        if (pos) {
+          connections.push(
+            <path
+              key={`${cornerMatch.id}-${bottomLeftQuarter.id}`}
+              d={createPath(
+                pos.x + cardWidth, // From right edge
+                pos.y + pos.height / 2,
+                quarterPos.x, // To left edge
+                quarterPos.y + quarterPos.height / 2
+              )}
+              stroke="#fbbf24"
+              strokeWidth={2}
+              fill="none"
+              opacity={0.6}
+            />
+          );
+        }
+      });
+    }
+  }
+
+  // BOTTOM-RIGHT CORNER (2 matches) → Bottom-Right Quarter
+  const bottomRight = round1.slice(6, 8);
+  const bottomRightQuarter = round2[3];
+  
+  if (bottomRightQuarter) {
+    const quarterPos = findPos(bottomRightQuarter);
+    if (quarterPos) {
+      bottomRight.forEach(cornerMatch => {
+        const pos = findPos(cornerMatch);
+        if (pos) {
+          connections.push(
+            <path
+              key={`${cornerMatch.id}-${bottomRightQuarter.id}`}
+              d={createPath(
+                pos.x, // From left edge
+                pos.y + pos.height / 2,
+                quarterPos.x + cardWidth, // To right edge
+                quarterPos.y + quarterPos.height / 2
+              )}
+              stroke="#fbbf24"
+              strokeWidth={2}
+              fill="none"
+              opacity={0.6}
+            />
+          );
+        }
+      });
+    }
+  }
+
+  // === QUARTERS → SEMIS (HIGHLIGHTED CONNECTIONS) ===
+  
+  // Left quarters (top + bottom) → Left Semi
+  const leftSemi = semis[0];
+  if (leftSemi && topLeftQuarter && bottomLeftQuarter) {
+    const semiPos = findPos(leftSemi);
+    const tlqPos = findPos(topLeftQuarter);
+    const blqPos = findPos(bottomLeftQuarter);
+    
+    // Top-Left Quarter → Left Semi
+    if (semiPos && tlqPos) {
+      connections.push(
+        <path
+          key={`${topLeftQuarter.id}-${leftSemi.id}`}
+          d={createPath(
+            tlqPos.x + cardWidth / 2,
+            tlqPos.y + tlqPos.height,
+            semiPos.x + cardWidth / 2,
+            semiPos.y
+          )}
+          stroke="#fbbf24"
+          strokeWidth={2.5}
+          fill="none"
+          opacity={0.7}
+        />
+      );
+    }
+    
+    // Bottom-Left Quarter → Left Semi
+    if (semiPos && blqPos) {
+      connections.push(
+        <path
+          key={`${bottomLeftQuarter.id}-${leftSemi.id}`}
+          d={createPath(
+            blqPos.x + cardWidth / 2,
+            blqPos.y,
+            semiPos.x + cardWidth / 2,
+            semiPos.y + semiPos.height
+          )}
+          stroke="#fbbf24"
+          strokeWidth={2.5}
+          fill="none"
+          opacity={0.7}
+        />
+      );
+    }
+  }
+
+  // Right quarters (top + bottom) → Right Semi
+  const rightSemi = semis[1];
+  if (rightSemi && topRightQuarter && bottomRightQuarter) {
+    const semiPos = findPos(rightSemi);
+    const trqPos = findPos(topRightQuarter);
+    const brqPos = findPos(bottomRightQuarter);
+    
+    // Top-Right Quarter → Right Semi
+    if (semiPos && trqPos) {
+      connections.push(
+        <path
+          key={`${topRightQuarter.id}-${rightSemi.id}`}
+          d={createPath(
+            trqPos.x + cardWidth / 2,
+            trqPos.y + trqPos.height,
+            semiPos.x + cardWidth / 2,
+            semiPos.y
+          )}
+          stroke="#fbbf24"
+          strokeWidth={2.5}
+          fill="none"
+          opacity={0.7}
+        />
+      );
+    }
+    
+    // Bottom-Right Quarter → Right Semi
+    if (semiPos && brqPos) {
+      connections.push(
+        <path
+          key={`${bottomRightQuarter.id}-${rightSemi.id}`}
+          d={createPath(
+            brqPos.x + cardWidth / 2,
+            brqPos.y,
+            semiPos.x + cardWidth / 2,
+            semiPos.y + semiPos.height
+          )}
+          stroke="#fbbf24"
+          strokeWidth={2.5}
+          fill="none"
+          opacity={0.7}
+        />
+      );
+    }
+  }
+
+  // === SEMIS → FINAL (HORIZONTAL CONNECTIONS - HIGHLIGHTED) ===
+  if (final[0]) {
+    const finalPos = findPos(final[0]);
+    if (finalPos) {
+      // Left Semi → Final (horizontal right edge to left edge)
+      if (leftSemi) {
+        const semiPos = findPos(leftSemi);
+        if (semiPos) {
+          connections.push(
+            <path
+              key={`${leftSemi.id}-${final[0].id}`}
+              d={createPath(
+                semiPos.x + cardWidth,
+                semiPos.y + semiPos.height / 2,
+                finalPos.x,
+                finalPos.y + finalPos.height / 2
+              )}
+              stroke="#fbbf24"
+              strokeWidth={3}
+              fill="none"
+              opacity={0.8}
+            />
+          );
+        }
+      }
+
+      // Right Semi → Final (horizontal left edge to right edge)
+      if (rightSemi) {
+        const semiPos = findPos(rightSemi);
+        if (semiPos) {
+          connections.push(
+            <path
+              key={`${rightSemi.id}-${final[0].id}`}
+              d={createPath(
+                semiPos.x,
+                semiPos.y + semiPos.height / 2,
+                finalPos.x + cardWidth,
+                finalPos.y + finalPos.height / 2
+              )}
+              stroke="#fbbf24"
+              strokeWidth={3}
+              fill="none"
+              opacity={0.8}
+            />
+          );
+        }
+      }
+    }
+  }
+
+  console.log(`✅ Cross Finals 4-CORNER: Drew ${connections.length} connectors`);
+  return connections;
+}
+
 export const FullTournamentView = ({
   allMatches,
   groupAMatches,
@@ -364,7 +693,7 @@ export const FullTournamentView = ({
 
   // Layout configuration - OPTIMIZED for 27" widescreen (2560x1440)
   const CARD_WIDTH = 135;  // Balanced width for content
-  const CARD_HEIGHT = 75;  // Increased for better readability
+  const CARD_HEIGHT = 85;  // Standard height for Group matches
   const HORIZONTAL_GAP = 45;  // Balanced gap between rounds
   const VERTICAL_GAP = 12;  // Balanced vertical spacing
   const CROSS_FINALS_VERTICAL_GAP = 30;  // Balanced Cross Finals spacing
@@ -379,6 +708,14 @@ export const FullTournamentView = ({
     const wbMatches = matches.filter(m => m.bracket_type === 'WB');
     const lbAMatches = matches.filter(m => m.bracket_type === 'LB-A');
     const lbBMatches = matches.filter(m => m.bracket_type === 'LB-B');
+
+    console.log('🔍 calculateGroupPositions:', {
+      total: matches.length,
+      wb: wbMatches.length,
+      lbA: lbAMatches.length,
+      lbB: lbBMatches.length,
+      lbBMatches: lbBMatches.map(m => ({ id: m.match_number, round: m.round_number }))
+    });
 
     const positioned: GroupPositions = { wb: [], lbA: [], lbB: [] };
 
@@ -410,6 +747,14 @@ export const FullTournamentView = ({
     // Position Loser Bracket B on RIGHT (bottom stack, below LB-A)
     const lbAHeight = Math.max(...positioned.lbA.map(m => m.y + m.height), HEADER_HEIGHT);
     const lbBStartY = lbAHeight + SECTION_VERTICAL_SPACING + HEADER_HEIGHT;
+    
+    console.log('📐 LB-B Positioning (LTR):', {
+      lbAHeight,
+      lbBStartY,
+      lbBMatchesCount: lbBMatches.length,
+      SECTION_VERTICAL_SPACING
+    });
+    
     const lbBPositioned = calculateTreePositions(
       lbBMatches,
       lbBStartY,
@@ -522,130 +867,197 @@ export const FullTournamentView = ({
     console.log('🔍 Cross Finals Debug:', {
       totalMatches: crossMatches.length,
       rounds: Object.keys(rounds).map(r => ({ round: r, count: rounds[r].length })),
-      roundNumbers
+      roundNumbers,
+      allMatches: crossMatches.map(m => ({
+        id: m.id,
+        round: m.round_number,
+        bracket: m.bracket_type
+      }))
     });
 
     if (roundNumbers.length === 0) {
       return { crossPositioned: [], crossDimensions: { width: CARD_WIDTH + 50, height: 600 } };
     }
 
-    // Calculate total width for symmetric layout
-    const totalRounds = roundNumbers.length;
-    const singleSideWidth = Math.ceil(totalRounds / 2) * (CARD_WIDTH + HORIZONTAL_GAP);
-    const centerGap = 100; // Gap between left and right sides
-    const totalWidth = singleSideWidth * 2 + centerGap;
-    const centerX = totalWidth / 2;
-
-    // Position Round 1: Split into left (4) and right (4)
-    const r1Matches = rounds[1] || [];
-    const half = Math.ceil(r1Matches.length / 2);
-    const leftR1 = r1Matches.slice(0, half);
-    const rightR1 = r1Matches.slice(half);
-
-    console.log(`🔄 Positioning Round 1: ${r1Matches.length} matches (${leftR1.length} left + ${rightR1.length} right)`);
-
-    // Left side R1 matches
-    leftR1.forEach((match, idx) => {
-      positioned.push({
-        ...match,
-        x: 0,
-        y: HEADER_HEIGHT + idx * (CARD_HEIGHT + CROSS_FINALS_VERTICAL_GAP),
-        height: CARD_HEIGHT
-      });
-    });
-
-    // Right side R1 matches
-    rightR1.forEach((match, idx) => {
-      positioned.push({
-        ...match,
-        x: totalWidth - CARD_WIDTH,
-        y: HEADER_HEIGHT + idx * (CARD_HEIGHT + CROSS_FINALS_VERTICAL_GAP),
-        height: CARD_HEIGHT
-      });
-    });
-
-    // Position subsequent rounds
-    for (let i = 1; i < roundNumbers.length; i++) {
-      const roundNum = roundNumbers[i];
-      const roundMatches = rounds[roundNum];
-      const prevRoundNum = roundNumbers[i - 1];
+    // Cross Finals - 4-CORNER LAYOUT: Professional radial convergence design
+    // EXPERT ANALYSIS: Symmetric flow from 4 corners → quarters → semis → final
+    const bracketWidth = 1100;
+    const bracketHeight = 1000; // INCREASED for trophy spacing (was 800)
+    
+    // 4-corner symmetric positioning with mathematical precision
+    if (roundNumbers.length >= 4) { // R1(8), R2(4), Semis(2), Final(1)
+      const round1Matches = rounds[roundNumbers[0]] || []; // 8 matches
+      const round2Matches = rounds[roundNumbers[1]] || []; // 4 matches (quarter-finals)
+      const semiMatches = rounds[roundNumbers[2]] || [];   // 2 matches  
+      const finalMatch = rounds[roundNumbers[3]] || [];    // 1 match
       
-      console.log(`🔄 Positioning Round ${roundNum}: ${roundMatches.length} matches`);
-
-      // Determine if this is final round
-      const isFinal = i === roundNumbers.length - 1;
+      console.log(`🏆 Cross Finals 4-CORNER: R1=${round1Matches.length}, R2=${round2Matches.length}, Semis=${semiMatches.length}, Final=${finalMatch.length}`);
       
-      if (isFinal) {
-        // Final match at center
-        roundMatches.forEach((match, idx) => {
-          const prevMatches = positioned.filter(m => m.round_number === prevRoundNum).sort((a, b) => a.y - b.y);
-          
-          if (prevMatches.length >= 2) {
-            const child1 = prevMatches[idx * 2];
-            const child2 = prevMatches[idx * 2 + 1];
-            
-            if (child1 && child2) {
-              const centerY = (child1.y + child2.y + child2.height) / 2 - CARD_HEIGHT / 2;
-              positioned.push({
-                ...match,
-                x: centerX - CARD_WIDTH / 2,
-                y: centerY,
-                height: CARD_HEIGHT
-              });
-            }
-          }
+      // LAYOUT CONSTANTS - Professional spacing with extra room for trophy
+      const edgeMargin = 40;           // Distance from edges
+      const cornerVerticalGap = 40;    // Gap between 2 matches in corner (increased from 35)
+      const horizontalStep = 200;      // Horizontal distance per round (R1→R2→Semis)
+      
+      // CENTER CALCULATIONS
+      const centerX = bracketWidth / 2 - CARD_WIDTH / 2;
+      const centerY = HEADER_HEIGHT + bracketHeight / 2 + 60; // Extra offset for trophy
+      
+      // === ROUND 1: 4 CORNERS (2 matches each) - SYMMETRIC PLACEMENT ===
+      
+      const cornerStartY_Top = HEADER_HEIGHT + 100; // More top margin for trophy
+      const cornerStartY_Bottom = HEADER_HEIGHT + bracketHeight - 100 - (CARD_HEIGHT * 2 + cornerVerticalGap);
+      
+      // TOP-LEFT corner (MT05, MT06)
+      round1Matches.slice(0, 2).forEach((match, idx) => {
+        positioned.push({
+          ...match,
+          x: edgeMargin,
+          y: cornerStartY_Top + idx * (CARD_HEIGHT + cornerVerticalGap),
+          height: CARD_HEIGHT
         });
-      } else {
-        // Middle rounds: split into left and right sides
-        const prevMatches = positioned.filter(m => m.round_number === prevRoundNum).sort((a, b) => a.y - b.y);
-        const leftPrev = prevMatches.filter(m => m.x < centerX);
-        const rightPrev = prevMatches.filter(m => m.x >= centerX);
-        
-        const roundHalf = Math.ceil(roundMatches.length / 2);
-        const leftMatches = roundMatches.slice(0, roundHalf);
-        const rightMatches = roundMatches.slice(roundHalf);
-        
-        const xOffset = i * (CARD_WIDTH + HORIZONTAL_GAP);
-        
-        // Left side matches
-        leftMatches.forEach((match, idx) => {
-          const child1 = leftPrev[idx * 2];
-          const child2 = leftPrev[idx * 2 + 1];
-          
-          if (child1 && child2) {
-            const centerY = (child1.y + child2.y + child2.height) / 2 - CARD_HEIGHT / 2;
-            positioned.push({
-              ...match,
-              x: xOffset,
-              y: centerY,
-              height: CARD_HEIGHT
-            });
-          }
+      });
+      
+      // TOP-RIGHT corner (MT07, MT08)
+      round1Matches.slice(2, 4).forEach((match, idx) => {
+        positioned.push({
+          ...match,
+          x: bracketWidth - CARD_WIDTH - edgeMargin,
+          y: cornerStartY_Top + idx * (CARD_HEIGHT + cornerVerticalGap),
+          height: CARD_HEIGHT
         });
-        
-        // Right side matches
-        rightMatches.forEach((match, idx) => {
-          const child1 = rightPrev[idx * 2];
-          const child2 = rightPrev[idx * 2 + 1];
-          
-          if (child1 && child2) {
-            const centerY = (child1.y + child2.y + child2.height) / 2 - CARD_HEIGHT / 2;
-            positioned.push({
-              ...match,
-              x: totalWidth - CARD_WIDTH - xOffset,
-              y: centerY,
-              height: CARD_HEIGHT
-            });
-          }
+      });
+      
+      // BOTTOM-LEFT corner (MT09, MT10)
+      round1Matches.slice(4, 6).forEach((match, idx) => {
+        positioned.push({
+          ...match,
+          x: edgeMargin,
+          y: cornerStartY_Bottom + idx * (CARD_HEIGHT + cornerVerticalGap),
+          height: CARD_HEIGHT
         });
+      });
+      
+      // BOTTOM-RIGHT corner (MT11, MT12)
+      round1Matches.slice(6, 8).forEach((match, idx) => {
+        positioned.push({
+          ...match,
+          x: bracketWidth - CARD_WIDTH - edgeMargin,
+          y: cornerStartY_Bottom + idx * (CARD_HEIGHT + cornerVerticalGap),
+          height: CARD_HEIGHT
+        });
+      });
+      
+      // === ROUND 2: 4 QUARTERS - POSITIONED BETWEEN CORNERS AND SEMIS ===
+      
+      // Calculate CENTER Y of each corner pair for perfect alignment
+      const topCornerCenterY = cornerStartY_Top + CARD_HEIGHT + cornerVerticalGap / 2;
+      const bottomCornerCenterY = cornerStartY_Bottom + CARD_HEIGHT + cornerVerticalGap / 2;
+      
+      // X positions: One step closer to center from corners
+      const quarterX_Left = edgeMargin + horizontalStep;
+      const quarterX_Right = bracketWidth - CARD_WIDTH - edgeMargin - horizontalStep;
+      
+      // Top-Left Quarter (MT13) - Aligned with top-left corner pair
+      if (round2Matches[0]) {
+        positioned.push({
+          ...round2Matches[0],
+          x: quarterX_Left,
+          y: topCornerCenterY - CARD_HEIGHT / 2,
+          height: CARD_HEIGHT
+        });
+      }
+      
+      // Top-Right Quarter (MT14) - Aligned with top-right corner pair
+      if (round2Matches[1]) {
+        positioned.push({
+          ...round2Matches[1],
+          x: quarterX_Right,
+          y: topCornerCenterY - CARD_HEIGHT / 2,
+          height: CARD_HEIGHT
+        });
+      }
+      
+      // Bottom-Left Quarter (MT15) - Aligned with bottom-left corner pair
+      if (round2Matches[2]) {
+        positioned.push({
+          ...round2Matches[2],
+          x: quarterX_Left,
+          y: bottomCornerCenterY - CARD_HEIGHT / 2,
+          height: CARD_HEIGHT
+        });
+      }
+      
+      // Bottom-Right Quarter (MT16) - Aligned with bottom-right corner pair
+      if (round2Matches[3]) {
+        positioned.push({
+          ...round2Matches[3],
+          x: quarterX_Right,
+          y: bottomCornerCenterY - CARD_HEIGHT / 2,
+          height: CARD_HEIGHT
+        });
+      }
+      
+      // === SEMIS: 2 matches - SAME COLUMN AS QUARTERS ===
+      
+      // Y position: Exactly between top and bottom quarters
+      const semiY = (topCornerCenterY + bottomCornerCenterY) / 2 - CARD_HEIGHT / 2;
+      
+      // X positions: SAME AS QUARTERS (no horizontal step)
+      const semiX_Left = quarterX_Left;
+      const semiX_Right = quarterX_Right;
+      
+      // Left Semi (MT17)
+      if (semiMatches[0]) {
+        positioned.push({
+          ...semiMatches[0],
+          x: semiX_Left,
+          y: semiY,
+          height: CARD_HEIGHT
+        });
+      }
+      
+      // Right Semi (MT18)
+      if (semiMatches[1]) {
+        positioned.push({
+          ...semiMatches[1],
+          x: semiX_Right,
+          y: semiY,
+          height: CARD_HEIGHT
+        });
+      }
+      
+      // === FINAL: CENTER - SAME ROW AS SEMIS ===
+      if (finalMatch[0]) {
+        positioned.push({
+          ...finalMatch[0],
+          x: centerX,
+          y: semiY, // Same Y as semis for horizontal alignment
+          height: CARD_HEIGHT
+        });
+      }
+    } else {
+      // Fallback for unexpected structure
+      for (let roundIndex = 0; roundIndex < roundNumbers.length; roundIndex++) {
+        const roundNum = roundNumbers[roundIndex];
+        const roundMatches = rounds[roundNum];
+        const xPosition = roundIndex * (CARD_WIDTH + 80) + 100;
+        const startY = HEADER_HEIGHT + 100;
+        
+        for (let matchIndex = 0; matchIndex < roundMatches.length; matchIndex++) {
+          const match = roundMatches[matchIndex];
+          positioned.push({
+            ...match,
+            x: xPosition,
+            y: startY + matchIndex * (CARD_HEIGHT + 20),
+            height: CARD_HEIGHT
+          });
+        }
       }
     }
 
-    // Calculate dimensions with minimal padding
-    const minX = Math.min(...positioned.map(m => m.x), 0);
-    const maxX = Math.max(...positioned.map(m => m.x + CARD_WIDTH));
-    const width = maxX - minX + 60;  // Minimal horizontal padding
-    const height = Math.max(...positioned.map(m => m.y + m.height), 600) + 30;  // Minimal vertical padding
+    // Calculate dimensions for symmetric bracket
+    const width = bracketWidth + 100;  // Add padding
+    const height = bracketHeight + HEADER_HEIGHT + 50; // Add header + padding
 
     console.log('✅ Cross Finals Layout Complete:', {
       totalPositioned: positioned.length,
@@ -782,6 +1194,49 @@ export const FullTournamentView = ({
     return null;
   };
 
+  // Helper: Get Cross Finals match color based on bracket origin of players
+  const getCrossFinalsMatchColor = (match: PositionedMatch): string | null => {
+    // For Cross Finals, determine color based on bracket origin of players
+    // Find source matches where winners advance to this Cross Finals match
+    const sourceMatches = allMatches.filter(sourceMatch => {
+      return sourceMatch.winner_id === match.player1_id || 
+             sourceMatch.winner_id === match.player2_id;
+    });
+    
+    // Determine bracket colors from source matches
+    const bracketColors = new Set<string>();
+    
+    sourceMatches.forEach(sourceMatch => {
+      if (sourceMatch.bracket_type === 'WB') {
+        bracketColors.add('#fbbf24'); // Gold for WB in Cross Finals
+      } else if (sourceMatch.bracket_type === 'LB-A') {
+        bracketColors.add('#f97316'); // Orange for LB-A
+      } else if (sourceMatch.bracket_type === 'LB-B') {
+        bracketColors.add('#ef4444'); // Red for LB-B
+      }
+    });
+    
+    // Priority: WB > LB-A > LB-B (if multiple bracket types)
+    if (bracketColors.has('#fbbf24')) return '#fbbf24'; // WB priority (Gold in Cross Finals)
+    if (bracketColors.has('#f97316')) return '#f97316'; // LB-A second
+    if (bracketColors.has('#ef4444')) return '#ef4444'; // LB-B third
+    
+    // Fallback: Default Cross Finals color
+    return '#a78bfa'; // Purple for Cross Finals default
+  };
+
+  // Helper: Check if match is Cross Finals qualifying match (should hide outer border)
+  const shouldHideBorderForCrossFinalsMatch = (match: PositionedMatch): boolean => {
+    return (
+      // WB Round 3 matches - winners qualify for Cross Finals
+      (match.bracket_type === 'WB' && match.round_number === 3) ||
+      // LB-A Final - winner qualifies for Cross Finals  
+      (match.bracket_type === 'LB-A' && match.round_number === 103) ||
+      // LB-B Final - winner qualifies for Cross Finals
+      (match.bracket_type === 'LB-B' && match.round_number === 203)
+    );
+  };
+
   // Render a single group with color highlights for winners
   const renderGroup = (
     groupName: string,
@@ -797,13 +1252,24 @@ export const FullTournamentView = ({
     // Simple translate (no flip)
     const transform = `translate(${offset.x}, ${offset.y})`;
 
-    // Helper to render match with optional color highlight
+    // Helper to render match with bracket-specific winner colors
     const renderMatch = (match: PositionedMatch) => {
       const highlightColor = getMatchGroupColor(match.id);
+      
+      // Determine bracket-specific winner colors
+      let matchHighlightColor: string | null = null;
+      if (match.bracket_type === 'WB') {
+        matchHighlightColor = '#22c55e'; // Green for WB winners
+      } else if (match.bracket_type === 'LB-A') {
+        matchHighlightColor = '#f97316'; // Orange for LB-A winners  
+      } else if (match.bracket_type === 'LB-B') {
+        matchHighlightColor = '#ef4444'; // Red for LB-B winners
+      }
+      
       return (
         <g key={match.id}>
-          {/* Highlight border if this is a winner */}
-          {highlightColor && (
+          {/* Highlight border if this is a winner AND NOT a Cross Finals qualifying match */}
+          {highlightColor && !shouldHideBorderForCrossFinalsMatch(match) && (
             <rect
               x={match.x - 3}
               y={match.y - 3}
@@ -822,7 +1288,11 @@ export const FullTournamentView = ({
             width={CARD_WIDTH}
             height={CARD_HEIGHT}
           >
-            <MatchCard match={match} allMatches={allMatches} />
+            <MatchCard 
+              match={match} 
+              allMatches={allMatches} 
+              highlightColor={matchHighlightColor || '#22c55e'}
+            />
           </foreignObject>
         </g>
       );
@@ -1053,74 +1523,127 @@ export const FullTournamentView = ({
         {renderGroup('C', groupC, groupCOffset, groupCMatches, false)}
         {renderGroup('D', groupD, groupDOffset, groupDMatches, true)}
 
-        {/* Cross Finals */}
+        {/* Cross Finals - CLEAN LAYOUT */}
         <g transform={`translate(${crossFinalsOffset.x}, ${crossFinalsOffset.y})`}>
-          <text x="10" y="20" fontSize="20" fontWeight="bold" fill="#a78bfa">
+          <text x="10" y="20" fontSize="20" fontWeight="bold" fill="#fbbf24">
             🏆 Cross Finals ({crossMatches.length})
           </text>
           
-          {/* Cross Finals connections (between rounds) */}
-          {renderConnections(crossPositioned, '#a78bfa', 2, CARD_WIDTH, false)}
+          {/* Cross Finals connections (between rounds) - DE16 structure */}
+          {renderCrossFinalsConnections(crossPositioned, CARD_WIDTH)}
           
-          {/* Trophy icon above Final match */}
-          {(() => {
-            const finalMatch = crossPositioned.find(m => m.round_number === Math.max(...crossPositioned.map(x => x.round_number)));
-            if (finalMatch) {
-              return (
-                <g>
-                  {/* Trophy icon */}
-                  <text 
-                    x={finalMatch.x + CARD_WIDTH / 2} 
-                    y={finalMatch.y - 30} 
-                    fontSize="40" 
-                    textAnchor="middle"
-                    style={{ filter: 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.8))' }}
-                  >
-                    🏆
-                  </text>
-                  {/* Final label */}
-                  <text 
-                    x={finalMatch.x + CARD_WIDTH / 2} 
-                    y={finalMatch.y - 5} 
-                    fontSize="12" 
-                    fontWeight="bold"
-                    fill="#fbbf24"
-                    textAnchor="middle"
-                  >
-                    CHUNG KẾT
-                  </text>
-                </g>
-              );
-            }
-            return null;
-          })()}
-          
-          {/* Cross Finals matches with color coding for R1 */}
+          {/* Cross Finals matches with PREMIUM FINAL CARD */}
           {crossPositioned.map(match => {
-            const r1Color = getCrossFinalsR1Color(match);
+            const bracketColor = getCrossFinalsMatchColor(match);
+            
+            // Calculate max round number in Cross Finals to identify Semis and Final
+            const maxRound = Math.max(...crossPositioned.map(m => m.round_number || 0));
+            const isSemiFinal = match.round_number === maxRound - 1; // 2nd to last round (Semis)
+            const isFinal = match.round_number === maxRound; // Last round (Final)
+            
+            // SCALE for visual hierarchy - content size unchanged
+            const scale = isFinal ? 1.35 : isSemiFinal ? 1.10 : 1.08;
+            const borderWidth = isFinal ? '4px' : isSemiFinal ? '3px' : '2px'; // Giảm độ dày viền
+            
+            // ULTRA PREMIUM GLOW for Final
+            const glowIntensity = isFinal 
+              ? '0 0 40px rgba(255, 215, 0, 1), 0 0 30px rgba(251, 191, 36, 0.9), 0 0 20px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 215, 0, 0.6)' 
+              : isSemiFinal 
+                ? '0 0 18px rgba(251, 191, 36, 0.7), 0 0 8px rgba(212, 175, 55, 0.5)' 
+                : '0 0 12px rgba(251, 191, 36, 0.6)';
+            
+            // PREMIUM BORDER STYLE - BỎ HẾT viền khung, chỉ giữ glow
+            const borderStyle = isFinal ? {
+              boxShadow: glowIntensity,
+              borderRadius: '12px',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: 'relative' as const,
+              overflow: 'visible',
+              // Premium background for Final card
+              background: 'linear-gradient(135deg, rgba(30, 20, 10, 0.95) 0%, rgba(40, 30, 15, 0.98) 50%, rgba(30, 20, 10, 0.95) 100%)',
+            } : {
+              // BỎ HẾT border cho Cross Finals cards
+              boxShadow: glowIntensity,
+              borderRadius: '8px',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            };
+            
+            // Tăng kích thước cho TẤT CẢ Cross Finals cards
+            const crossFinalsWidth = isFinal ? 200 : isSemiFinal ? 160 : 150;
+            const crossFinalsHeight = isFinal ? 140 : isSemiFinal ? 105 : 100;
+            const offsetX = (crossFinalsWidth - CARD_WIDTH) / 2;
+            const offsetY = (crossFinalsHeight - CARD_HEIGHT) / 2;
+            
             return (
               <g key={match.id}>
-                {/* Highlight border for R1 matches */}
-                {r1Color && (
-                  <rect
-                    x={match.x - 3}
-                    y={match.y - 3}
-                    width={CARD_WIDTH + 6}
-                    height={CARD_HEIGHT + 6}
-                    fill="none"
-                    stroke={r1Color}
-                    strokeWidth={3}
-                    rx={8}
-                    opacity={0.8}
-                  />
+                {/* Beautiful Trophy Cup for Final */}
+                {isFinal && (
+                  <g transform={`translate(${match.x - offsetX + crossFinalsWidth / 2}, ${match.y - offsetY - 170})`}>
+                    {/* Championship label */}
+                    <text 
+                      x="0" 
+                      y="0" 
+                      fontSize="16" 
+                      fontWeight="900"
+                      fill="#ffd700"
+                      textAnchor="middle"
+                      letterSpacing="4"
+                      style={{ filter: 'drop-shadow(0 0 8px rgba(255, 215, 0, 1))' }}
+                    >
+                      CHUNG KẾT
+                    </text>
+                    
+                    {/* Massive Glow behind cup */}
+                    <circle
+                      cx="0"
+                      cy="65"
+                      r="50"
+                      fill="rgba(255, 215, 0, 0.3)"
+                      filter="blur(20px)"
+                    />
+                    
+                    {/* Trophy Cup Emoji - HUGE */}
+                    <text
+                      x="0"
+                      y="95"
+                      fontSize="80"
+                      textAnchor="middle"
+                      style={{ 
+                        filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 1)) drop-shadow(0 0 40px rgba(255, 215, 0, 0.6))',
+                      }}
+                    >
+                      🏆
+                    </text>
+                  </g>
                 )}
+                
+                {isSemiFinal && (
+                  <text 
+                    x={match.x + CARD_WIDTH / 2} 
+                    y={match.y - 15} 
+                    fontSize="20" 
+                    textAnchor="middle"
+                    style={{ filter: 'drop-shadow(0 0 4px rgba(212, 175, 55, 0.8))' }}
+                  >
+                    🥈
+                  </text>
+                )}
+                
+                {/* Container size via dimensions only - NO scale transform */}
                 <foreignObject
-                  x={match.x}
-                  y={match.y}
-                  width={CARD_WIDTH}
-                  height={CARD_HEIGHT}
+                  x={match.x - offsetX}
+                  y={match.y - offsetY}
+                  width={crossFinalsWidth}
+                  height={crossFinalsHeight}
                 >
-                  <MatchCard match={match} allMatches={allMatches} />
+                  <div style={borderStyle}>
+                    <MatchCard 
+                      match={match} 
+                      allMatches={allMatches} 
+                      highlightColor={bracketColor}
+                      isFinalMatch={isFinal}
+                    />
+                  </div>
                 </foreignObject>
               </g>
             );

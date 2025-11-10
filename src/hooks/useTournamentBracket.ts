@@ -34,6 +34,7 @@ interface SupabaseMatch {
     username: string | null;
     full_name: string | null;
     avatar_url: string | null;
+    rank: string | null;
   } | null;
   player2?: {
     id: string;
@@ -41,6 +42,7 @@ interface SupabaseMatch {
     username: string | null;
     full_name: string | null;
     avatar_url: string | null;
+    rank: string | null;
   } | null;
 }
 
@@ -85,14 +87,16 @@ export const useTournamentBracket = (tournamentId: string) => {
             display_name,
             username,
             full_name,
-            avatar_url
+            avatar_url,
+            rank
           ),
           player2:users!player2_id(
             id,
             display_name,
             username,
             full_name,
-            avatar_url
+            avatar_url,
+            rank
           )
         `)
         .eq("tournament_id", tournamentId)
@@ -269,14 +273,15 @@ function determineLoser(match: SupabaseMatch): string | null {
 }
 
 /**
- * Get winner bracket round name
+ * Get winner bracket round name (SABO Enhanced)
  */
 function getWinnerRoundName(roundNum: number, matchCount: number): string {
+  // SABO enhanced structure
   const names: Record<number, string> = {
-    1: `Round 1 (${matchCount})`,
-    2: `Round 2 (${matchCount})`,
-    3: `Round 3 (${matchCount})`,
-    4: `Quarter Finals (${matchCount})`,
+    1: `WB Round 1 (${matchCount})`, // 16 → 8
+    2: `WB Round 2 (${matchCount})`, // 8 → 4
+    3: `WB Round 3 (${matchCount})`, // 4 → 2
+    4: `WB Finals (${matchCount})`,  // 2 → 1
     5: `Semi Finals (${matchCount})`,
     6: `Winner Finals (${matchCount})`
   };
@@ -285,12 +290,35 @@ function getWinnerRoundName(roundNum: number, matchCount: number): string {
 }
 
 /**
- * Get loser bracket round name
+ * Get loser bracket round name (SABO Enhanced)
  */
 function getLoserRoundName(roundNum: number, matchCount: number): string {
-  // Loser bracket uses round numbers 101, 102, 103, etc.
-  const loserRound = roundNum - 100;
+  // SABO Enhanced: Different round number ranges for different bracket types
   
+  // LB-A rounds: 101-103
+  if (roundNum >= 101 && roundNum <= 103) {
+    const lbAround = roundNum - 100;
+    const lbAnames: Record<number, string> = {
+      1: `LB-A Round 1 (${matchCount})`, // 8 → 4
+      2: `LB-A Round 2 (${matchCount})`, // 4 → 2  
+      3: `LB-A Round 3 (${matchCount})`  // 2 → 1
+    };
+    return lbAnames[lbAround] || `LB-A R${lbAround} (${matchCount})`;
+  }
+  
+  // LB-B rounds: 201-203 (Enhanced!)
+  if (roundNum >= 201 && roundNum <= 203) {
+    const lbBround = roundNum - 200;
+    const lbBnames: Record<number, string> = {
+      1: `LB-B Round 1 (${matchCount})`,      // 4 → 2
+      2: `LB-B Round 2 & 3 (${matchCount})`, // Concurrent rounds
+      3: `LB-B Round 4 (${matchCount})`       // Final (NEW!)
+    };
+    return lbBnames[lbBround] || `LB-B R${lbBround} (${matchCount})`;
+  }
+  
+  // Legacy/Generic loser rounds
+  const loserRound = roundNum >= 100 ? roundNum - 100 : roundNum;
   const names: Record<number, string> = {
     1: `LR1 (${matchCount})`,
     2: `LR2 (${matchCount})`,
