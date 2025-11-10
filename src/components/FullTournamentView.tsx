@@ -16,6 +16,7 @@ interface FullTournamentViewProps {
   groupCMatches: BracketMatch[];
   groupDMatches: BracketMatch[];
   crossMatches: BracketMatch[];
+  tournamentName?: string;
 }
 
 interface PositionedMatch extends BracketMatch {
@@ -616,7 +617,8 @@ export const FullTournamentView = ({
   groupBMatches,
   groupCMatches,
   groupDMatches,
-  crossMatches
+  crossMatches,
+  tournamentName = "GIẢI ĐẤU SABO DE64"
 }: FullTournamentViewProps) => {
   // Zoom state
   const [scale, setScale] = useState(1);
@@ -1525,6 +1527,49 @@ export const FullTournamentView = ({
 
         {/* Cross Finals - CLEAN LAYOUT */}
         <g transform={`translate(${crossFinalsOffset.x}, ${crossFinalsOffset.y})`}>
+          {/* TÊN GIẢI ĐẤU - Trung tâm phía trên */}
+          <g transform={`translate(${crossFinalsWidth / 2}, -80)`}>
+            {/* Background glow */}
+            <rect
+              x="-250"
+              y="-35"
+              width="500"
+              height="60"
+              fill="rgba(251, 191, 36, 0.1)"
+              rx="12"
+              filter="drop-shadow(0 0 20px rgba(251, 191, 36, 0.3))"
+            />
+            {/* Tên giải đấu */}
+            <text
+              x="0"
+              y="0"
+              fontSize="32"
+              fontWeight="900"
+              fill="#fbbf24"
+              textAnchor="middle"
+              letterSpacing="6"
+              style={{ 
+                filter: 'drop-shadow(0 0 12px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 24px rgba(255, 215, 0, 0.4))',
+                fontFamily: 'Inter, system-ui, sans-serif'
+              }}
+            >
+              {tournamentName}
+            </text>
+            {/* Subtitle - Cross Finals */}
+            <text
+              x="0"
+              y="25"
+              fontSize="14"
+              fontWeight="600"
+              fill="#fbbf24"
+              textAnchor="middle"
+              letterSpacing="3"
+              opacity="0.8"
+            >
+              🏆 VÒNG CHUNG KẾT
+            </text>
+          </g>
+          
           <text x="10" y="20" fontSize="20" fontWeight="bold" fill="#fbbf24">
             🏆 Cross Finals ({crossMatches.length})
           </text>
@@ -1568,9 +1613,9 @@ export const FullTournamentView = ({
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             };
             
-            // Tăng kích thước cho TẤT CẢ Cross Finals cards
-            const crossFinalsWidth = isFinal ? 200 : isSemiFinal ? 160 : 150;
-            const crossFinalsHeight = isFinal ? 140 : isSemiFinal ? 105 : 100;
+            // Tăng kích thước cho TẤT CẢ Cross Finals cards - FINAL card lớn hơn
+            const crossFinalsWidth = isFinal ? 280 : isSemiFinal ? 160 : 150;
+            const crossFinalsHeight = isFinal ? 180 : isSemiFinal ? 105 : 100;
             const offsetX = (crossFinalsWidth - CARD_WIDTH) / 2;
             const offsetY = (crossFinalsHeight - CARD_HEIGHT) / 2;
             

@@ -25,6 +25,7 @@ import LiveMatches from "./pages/LiveMatches";
 import AINewsAdmin from "./pages/AINewsAdmin";
 import AINewsAdminV2 from "./pages/AINewsAdminV2";
 import NewsTest from "./pages/NewsTest";
+import FullTournamentBracket from "./pages/FullTournamentBracket";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/rankings" element={<Rankings />} />
                 <Route path="/tournaments/:id" element={<TournamentDetails />} />
+                <Route path="/tournament/:id/full" element={<FullTournamentBracket />} />
                 <Route path="/clubs" element={<ClubDirectory />} />
                 <Route path="/profile" element={<MyProfile />} />
                 <Route path="/news/:slug" element={<NewsDetail />} />
