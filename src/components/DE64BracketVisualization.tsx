@@ -6,8 +6,9 @@ import { MatchCard } from "./MatchCard";
 import { FullBracketView } from "./FullBracketView";
 import { FullTournamentView } from "./FullTournamentView";
 import type { BracketMatch } from "@/types/bracket";
-import { AlertCircle, Award, Maximize2, Minimize2, ZoomIn, ZoomOut, Move, Grid3x3, Layers } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { AlertCircle, Award, Maximize2, ZoomIn, ZoomOut, Move, Grid3x3, Layers, X } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 interface DE64BracketVisualizationProps {
   tournamentId: string;
@@ -26,33 +27,50 @@ export const DE64BracketVisualization = ({ tournamentId }: DE64BracketVisualizat
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Handle fullscreen toggle
-  const toggleFullscreen = async () => {
-    if (!containerRef.current) return;
-
-    try {
-      if (!document.fullscreenElement) {
-        await containerRef.current.requestFullscreen();
-        setIsFullscreen(true);
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    } catch (err) {
-      console.error('Fullscreen error:', err);
-    }
-  };
-
-  // Listen for fullscreen changes (ESC key, etc)
+  // Detect mobile
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      
+      // Debug: Log fullscreen API support on mobile
+      if (mobile) {
+        console.log('📱 Mobile detected. Fullscreen API support:', {
+          standard: !!document.documentElement.requestFullscreen,
+          webkit: !!(document.documentElement as any).webkitRequestFullscreen,
+          moz: !!(document.documentElement as any).mozRequestFullScreen,
+          ms: !!(document.documentElement as any).msRequestFullscreen,
+          orientationAPI: !!screen.orientation,
+          orientationLock: !!screen.orientation?.lock
+        });
+      }
     };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Handle fullscreen toggle - CSS-based for better mobile support
+  const toggleFullscreen = useCallback(async () => {
+    setIsFullscreen(!isFullscreen);
+    
+    // Try to lock orientation on mobile when entering fullscreen
+    if (!isFullscreen && isMobile) {
+      try {
+        if (screen.orientation?.lock) {
+          await screen.orientation.lock('landscape');
+          console.log('✅ Locked to landscape');
+        }
+      } catch (err) {
+        console.log('⚠️ Could not lock orientation:', err);
+      }
+    } else if (isFullscreen && screen.orientation?.unlock) {
+      // Unlock when exiting
+      screen.orientation.unlock();
+    }
+  }, [isFullscreen, isMobile]);
 
   // Keyboard shortcuts for zoom
   useEffect(() => {
@@ -194,9 +212,7 @@ export const DE64BracketVisualization = ({ tournamentId }: DE64BracketVisualizat
   return (
     <div 
       ref={containerRef}
-      className={`h-full w-full flex flex-col bg-slate-950 relative ${
-        isFullscreen ? 'p-4' : ''
-      }`}
+      className="h-full w-full flex flex-col bg-slate-950 relative"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -205,12 +221,13 @@ export const DE64BracketVisualization = ({ tournamentId }: DE64BracketVisualizat
         cursor: isPanning ? 'grabbing' : zoom > 100 ? 'grab' : 'default'
       }}
     >
-      {/* Fullscreen Controls Toolbar */}
+      {/* Fullscreen Controls Toolbar - Hide zoom controls in fullscreen mobile */}
       <div className="absolute top-4 right-4 z-50 flex gap-2">
-        {/* Zoom Controls */}
-        <div className="flex gap-1 bg-slate-800/90 backdrop-blur-sm rounded-lg p-1 border border-slate-700">
-          <button
-            onClick={zoomOut}
+        {/* Zoom Controls - Hide in mobile fullscreen */}
+        {!(isFullscreen && isMobile) && (
+          <div className="flex gap-1 bg-slate-800/90 backdrop-blur-sm rounded-lg p-1 border border-slate-700">
+            <button
+              onClick={zoomOut}
             disabled={zoom <= 50}
             className="p-2 hover:bg-slate-700 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Zoom Out"
@@ -236,19 +253,18 @@ export const DE64BracketVisualization = ({ tournamentId }: DE64BracketVisualizat
             <Move className="w-5 h-5 text-white" />
           </button>
         </div>
+        )}
 
-        {/* Fullscreen Toggle */}
-        <button
-          onClick={toggleFullscreen}
-          className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-lg"
-          title={isFullscreen ? 'Exit Fullscreen (ESC)' : 'Enter Fullscreen'}
-        >
-          {isFullscreen ? (
-            <Minimize2 className="w-5 h-5 text-white" />
-          ) : (
+        {/* Fullscreen Toggle - Hide when fullscreen (portal has X button) */}
+        {!isFullscreen && (
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-lg"
+            title={isMobile ? 'Fullscreen + Landscape Mode' : 'Enter Fullscreen (F)'}
+          >
             <Maximize2 className="w-5 h-5 text-white" />
-          )}
-        </button>
+          </button>
+        )}
       </div>
 
       {/* Main Content with Zoom & Pan */}
@@ -259,29 +275,32 @@ export const DE64BracketVisualization = ({ tournamentId }: DE64BracketVisualizat
           transformOrigin: 'top left'
         }}
       >
-        <Tabs defaultValue="groupA" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-6 bg-slate-800 border-b border-slate-700">
-            <TabsTrigger value="fullTournament" className="text-amber-400">
-              <Layers className="w-4 h-4 mr-1" />
-              Full Tournament
-            </TabsTrigger>
-            <TabsTrigger value="groupA">
-              Group A ({groupAMatches.length})
-            </TabsTrigger>
-            <TabsTrigger value="groupB">
-              Group B ({groupBMatches.length})
-            </TabsTrigger>
-            <TabsTrigger value="groupC">
-              Group C ({groupCMatches.length})
-            </TabsTrigger>
-            <TabsTrigger value="groupD">
-              Group D ({groupDMatches.length})
-            </TabsTrigger>
-            <TabsTrigger value="cross" className="text-purple-400">
-              <Award className="w-4 h-4 mr-1" />
-            Cross Finals ({crossMatches.length})
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="fullTournament" className="flex-1 flex flex-col">
+          {/* Hide TabsList in mobile fullscreen */}
+          {!(isFullscreen && isMobile) && (
+            <TabsList className="grid w-full grid-cols-6 bg-slate-800 border-b border-slate-700">
+              <TabsTrigger value="fullTournament" className="text-amber-400">
+                <Layers className="w-4 h-4 mr-1" />
+                Full Tournament
+              </TabsTrigger>
+              <TabsTrigger value="groupA">
+                Group A ({groupAMatches.length})
+              </TabsTrigger>
+              <TabsTrigger value="groupB">
+                Group B ({groupBMatches.length})
+              </TabsTrigger>
+              <TabsTrigger value="groupC">
+                Group C ({groupCMatches.length})
+              </TabsTrigger>
+              <TabsTrigger value="groupD">
+                Group D ({groupDMatches.length})
+              </TabsTrigger>
+              <TabsTrigger value="cross" className="text-purple-400">
+                <Award className="w-4 h-4 mr-1" />
+                Cross Finals ({crossMatches.length})
+              </TabsTrigger>
+            </TabsList>
+          )}
 
         <TabsContent value="fullTournament" className="flex-1 overflow-auto">
           <FullTournamentView 
@@ -291,6 +310,7 @@ export const DE64BracketVisualization = ({ tournamentId }: DE64BracketVisualizat
             groupCMatches={groupCMatches}
             groupDMatches={groupDMatches}
             crossMatches={crossMatches}
+            isFullscreen={isFullscreen}
           />
         </TabsContent>
 
@@ -315,17 +335,19 @@ export const DE64BracketVisualization = ({ tournamentId }: DE64BracketVisualizat
         </TabsContent>
       </Tabs>
 
-        {/* Statistics Footer */}
-        <Card className="p-3 bg-slate-800/50 border-slate-700 rounded-none border-x-0 border-b-0">
-          <div className="flex items-center justify-between text-sm">
-            <div className="text-slate-400">
-              Groups: <span className="text-white font-bold">4</span>
+        {/* Statistics Footer - Hide in fullscreen */}
+        {!isFullscreen && (
+          <Card className="p-3 bg-slate-800/50 border-slate-700 rounded-none border-x-0 border-b-0">
+            <div className="flex items-center justify-between text-sm">
+              <div className="text-slate-400">
+                Groups: <span className="text-white font-bold">4</span>
+              </div>
+              <div className="text-slate-400">
+                Total Matches: <span className="text-white font-bold">{bracketData.total_matches}</span>
+              </div>
             </div>
-            <div className="text-slate-400">
-              Total Matches: <span className="text-white font-bold">{bracketData.total_matches}</span>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
       </div>
 
       {/* Keyboard Shortcuts Help - HIDDEN */}
@@ -353,6 +375,34 @@ export const DE64BracketVisualization = ({ tournamentId }: DE64BracketVisualizat
             </div>
           </div>
         </div>
+      )}
+
+      {/* 🎬 FULLSCREEN PORTAL OVERLAY - Like YouTube */}
+      {isFullscreen && createPortal(
+        <div className="fixed inset-0 z-[99999] bg-slate-950 flex flex-col animate-in fade-in duration-200">
+          {/* Exit Button - Top Right */}
+          <button
+            onClick={toggleFullscreen}
+            className="absolute top-4 right-4 z-50 p-3 bg-slate-800/90 hover:bg-slate-700 rounded-lg transition-colors shadow-lg"
+            title="Exit Fullscreen (ESC)"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Full Tournament View - Takes full screen */}
+          <div className="w-full h-full">
+            <FullTournamentView 
+              allMatches={allMatches}
+              groupAMatches={groupAMatches}
+              groupBMatches={groupBMatches}
+              groupCMatches={groupCMatches}
+              groupDMatches={groupDMatches}
+              crossMatches={crossMatches}
+              isFullscreen={true}
+            />
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

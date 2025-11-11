@@ -17,6 +17,7 @@ interface FullTournamentViewProps {
   groupDMatches: BracketMatch[];
   crossMatches: BracketMatch[];
   tournamentName?: string;
+  isFullscreen?: boolean; // 📱 For mobile landscape layout
 }
 
 interface PositionedMatch extends BracketMatch {
@@ -618,7 +619,8 @@ export const FullTournamentView = ({
   groupCMatches,
   groupDMatches,
   crossMatches,
-  tournamentName = "GIẢI ĐẤU SABO DE64"
+  tournamentName = "GIẢI ĐẤU SABO DE64",
+  isFullscreen = false
 }: FullTournamentViewProps) => {
   // Zoom state
   const [scale, setScale] = useState(1);
@@ -631,6 +633,82 @@ export const FullTournamentView = ({
   const svgRef = useRef<SVGSVGElement>(null);
   const MIN_SCALE = 0.3;
   const MAX_SCALE = 2;
+  
+  // 📱 MOBILE SUPPORT
+  const [isMobile, setIsMobile] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; dist: number } | null>(null);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      const landscape = window.innerWidth > window.innerHeight;
+      setIsMobile(mobile);
+      setIsLandscape(landscape);
+      
+      // 📱 Mobile: Smaller initial zoom (có zoom/pan controls)
+      if (mobile && !isManualZoom) {
+        setScale(0.35); // Smaller zoom, user can zoom in with controls
+        setTranslateX(0);
+        setTranslateY(0);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [isManualZoom]);
+  
+  // Touch event handlers for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      // Single touch - pan
+      const touch = e.touches[0];
+      setIsPanning(true);
+      setPanStart({ x: touch.clientX - translateX, y: touch.clientY - translateY });
+    } else if (e.touches.length === 2) {
+      // Two fingers - pinch zoom
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const dist = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      setTouchStart({ x: centerX, y: centerY, dist });
+      setIsPanning(false);
+    }
+  }, [translateX, translateY]);
+  
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isPanning) {
+      // Pan with single finger
+      const touch = e.touches[0];
+      setTranslateX(touch.clientX - panStart.x);
+      setTranslateY(touch.clientY - panStart.y);
+    } else if (e.touches.length === 2 && touchStart) {
+      // Pinch zoom
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const dist = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      
+      const scaleChange = dist / touchStart.dist;
+      const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * scaleChange));
+      
+      setScale(newScale);
+      setTouchStart({ ...touchStart, dist }); // Update distance for next move
+      setIsManualZoom(true);
+    }
+  }, [isPanning, panStart, touchStart, scale, MIN_SCALE, MAX_SCALE]);
+  
+  const handleTouchEnd = useCallback(() => {
+    setIsPanning(false);
+    setTouchStart(null);
+  }, []);
   
   // Zoom to cursor position
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
@@ -693,16 +771,16 @@ export const FullTournamentView = ({
     setIsPanning(false);
   }, []);
 
-  // Layout configuration - OPTIMIZED for 27" widescreen (2560x1440)
-  const CARD_WIDTH = 135;  // Balanced width for content
-  const CARD_HEIGHT = 85;  // Standard height for Group matches
-  const HORIZONTAL_GAP = 45;  // Balanced gap between rounds
-  const VERTICAL_GAP = 12;  // Balanced vertical spacing
-  const CROSS_FINALS_VERTICAL_GAP = 30;  // Balanced Cross Finals spacing
-  const SECTION_VERTICAL_SPACING = 30;  // Balanced section spacing
-  const HEADER_HEIGHT = 28;  // Balanced header
-  const GROUP_HORIZONTAL_GAP = 120;  // Gap between groups and Cross Finals
-  const GROUP_VERTICAL_GAP = 45;  // Balanced vertical gap between groups
+  // Layout configuration - STANDARD SIZE (mobile có zoom/pan)
+  const CARD_WIDTH = 135;
+  const CARD_HEIGHT = 85;
+  const HORIZONTAL_GAP = 45;
+  const VERTICAL_GAP = 12;
+  const CROSS_FINALS_VERTICAL_GAP = 30;
+  const SECTION_VERTICAL_SPACING = 30;
+  const HEADER_HEIGHT = 28;
+  const GROUP_HORIZONTAL_GAP = 120;
+  const GROUP_VERTICAL_GAP = 45;
 
   // Helper to calculate positions for one group (LEFT-TO-RIGHT)
   // NEW: WB on left, LB-A + LB-B stacked on right
@@ -896,12 +974,14 @@ export const FullTournamentView = ({
       console.log(`🏆 Cross Finals 4-CORNER: R1=${round1Matches.length}, R2=${round2Matches.length}, Semis=${semiMatches.length}, Final=${finalMatch.length}`);
       
       // LAYOUT CONSTANTS - Professional spacing with extra room for trophy
-      const edgeMargin = 40;           // Distance from edges
+      const edgeMargin = 40;           // Distance from edges for LEFT side
+      const edgeMarginRight = -80;     // Distance from edges for RIGHT side (NEGATIVE to shift right)
       const cornerVerticalGap = 40;    // Gap between 2 matches in corner (increased from 35)
       const horizontalStep = 200;      // Horizontal distance per round (R1→R2→Semis)
       
-      // CENTER CALCULATIONS
-      const centerX = bracketWidth / 2 - CARD_WIDTH / 2;
+      // CENTER CALCULATIONS (adjusted for right-side shift)
+      const visualCenterOffset = edgeMarginRight / 2; // Compensate for asymmetric margins
+      const centerX = bracketWidth / 2 - CARD_WIDTH / 2 + visualCenterOffset;
       const centerY = HEADER_HEIGHT + bracketHeight / 2 + 60; // Extra offset for trophy
       
       // === ROUND 1: 4 CORNERS (2 matches each) - SYMMETRIC PLACEMENT ===
@@ -923,7 +1003,7 @@ export const FullTournamentView = ({
       round1Matches.slice(2, 4).forEach((match, idx) => {
         positioned.push({
           ...match,
-          x: bracketWidth - CARD_WIDTH - edgeMargin,
+          x: bracketWidth - CARD_WIDTH - edgeMarginRight,
           y: cornerStartY_Top + idx * (CARD_HEIGHT + cornerVerticalGap),
           height: CARD_HEIGHT
         });
@@ -943,7 +1023,7 @@ export const FullTournamentView = ({
       round1Matches.slice(6, 8).forEach((match, idx) => {
         positioned.push({
           ...match,
-          x: bracketWidth - CARD_WIDTH - edgeMargin,
+          x: bracketWidth - CARD_WIDTH - edgeMarginRight,
           y: cornerStartY_Bottom + idx * (CARD_HEIGHT + cornerVerticalGap),
           height: CARD_HEIGHT
         });
@@ -957,7 +1037,7 @@ export const FullTournamentView = ({
       
       // X positions: One step closer to center from corners
       const quarterX_Left = edgeMargin + horizontalStep;
-      const quarterX_Right = bracketWidth - CARD_WIDTH - edgeMargin - horizontalStep;
+      const quarterX_Right = bracketWidth - CARD_WIDTH - edgeMarginRight - horizontalStep;
       
       // Top-Left Quarter (MT13) - Aligned with top-left corner pair
       if (round2Matches[0]) {
@@ -1028,11 +1108,17 @@ export const FullTournamentView = ({
         });
       }
       
-      // === FINAL: CENTER - SAME ROW AS SEMIS ===
+      // === FINAL: CENTER - Equidistant from both semis ===
       if (finalMatch[0]) {
+        // Calculate center position between left and right semis
+        const leftSemiCenter = semiX_Left + CARD_WIDTH / 2;
+        const rightSemiCenter = semiX_Right + CARD_WIDTH / 2;
+        const exactCenter = (leftSemiCenter + rightSemiCenter) / 2;
+        const finalX = exactCenter - CARD_WIDTH / 2;
+        
         positioned.push({
           ...finalMatch[0],
-          x: centerX,
+          x: finalX,
           y: semiY, // Same Y as semis for horizontal alignment
           height: CARD_HEIGHT
         });
@@ -1461,10 +1547,19 @@ export const FullTournamentView = ({
   return (
     <div 
       ref={containerRef} 
-      className="relative w-full h-screen bg-slate-950 overflow-auto"
+      className="relative w-full h-full bg-slate-950 overflow-auto"
       onWheel={handleWheel}
     >
-      {/* Zoom Controls */}
+      {/* 📱 Mobile Helper Hint - Hidden in fullscreen */}
+      {isMobile && !isFullscreen && (
+        <div className="absolute top-4 left-4 z-10 bg-blue-900/90 text-white px-3 py-2 rounded-lg text-xs max-w-[200px] backdrop-blur-sm border border-blue-700">
+          <p className="font-semibold mb-1">💡 Mẹo:</p>
+          <p>• Kéo 1 ngón: Di chuyển</p>
+          <p>• Chụm 2 ngón: Zoom</p>
+        </div>
+      )}
+      
+      {/* Zoom Controls - Always visible */}
       <div className="absolute top-4 right-4 z-10 flex gap-2">
         <button
           onClick={handleZoomOut}
@@ -1511,12 +1606,17 @@ export const FullTournamentView = ({
         style={{
           cursor: isPanning ? 'grabbing' : 'grab',
           transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
-          transformOrigin: '0 0'
+          transformOrigin: '0 0',
+          touchAction: 'none' // Prevent default touch behaviors
         }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       >
         <g>
         {/* Render all 4 groups */}
@@ -1613,22 +1713,27 @@ export const FullTournamentView = ({
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             };
             
-            // Tăng kích thước cho TẤT CẢ Cross Finals cards - FINAL card lớn hơn
+            // Tăng kích thước cho TẤT CẢ Cross Finals cards
             const crossFinalsWidth = isFinal ? 280 : isSemiFinal ? 160 : 150;
             const crossFinalsHeight = isFinal ? 180 : isSemiFinal ? 105 : 100;
             const offsetX = (crossFinalsWidth - CARD_WIDTH) / 2;
             const offsetY = (crossFinalsHeight - CARD_HEIGHT) / 2;
             
+            // Trophy size
+            const trophySize = 80;
+            const trophyYOffset = -170;
+            const trophyFontSize = 16;
+            
             return (
               <g key={match.id}>
                 {/* Beautiful Trophy Cup for Final */}
                 {isFinal && (
-                  <g transform={`translate(${match.x - offsetX + crossFinalsWidth / 2}, ${match.y - offsetY - 170})`}>
+                  <g transform={`translate(${match.x - offsetX + crossFinalsWidth / 2}, ${match.y - offsetY + trophyYOffset})`}>
                     {/* Championship label */}
                     <text 
                       x="0" 
                       y="0" 
-                      fontSize="16" 
+                      fontSize={trophyFontSize} 
                       fontWeight="900"
                       fill="#ffd700"
                       textAnchor="middle"
@@ -1642,16 +1747,16 @@ export const FullTournamentView = ({
                     <circle
                       cx="0"
                       cy="65"
-                      r="50"
+                      r={trophySize * 0.625}
                       fill="rgba(255, 215, 0, 0.3)"
                       filter="blur(20px)"
                     />
                     
-                    {/* Trophy Cup Emoji - HUGE */}
+                    {/* Trophy Cup Emoji - RESPONSIVE */}
                     <text
                       x="0"
                       y="95"
-                      fontSize="80"
+                      fontSize={trophySize}
                       textAnchor="middle"
                       style={{ 
                         filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 1)) drop-shadow(0 0 40px rgba(255, 215, 0, 0.6))',

@@ -7,25 +7,36 @@ export interface TournamentMatch {
   player1_id: string | null;
   player2_id: string | null;
   winner_id: string | null;
-  status: "scheduled" | "ongoing" | "completed" | "cancelled";
+  status: "scheduled" | "ongoing" | "completed" | "cancelled" | "upcoming";
   match_date: string | null;
   round: number;
+  round_number?: number; // Alias for round
+  match_number?: number; // Match number in tournament
+  bracket_type?: string; // Winner/Loser bracket
+  bracket_group?: string; // A, B, C, D, or Cross
+  player1_score?: number | null;
+  player2_score?: number | null;
+  is_final?: boolean;
+  is_third_place?: boolean;
   player1?: {
     id: string;
     display_name: string | null;
     username: string | null;
+    full_name: string | null;
     avatar_url: string | null;
   } | null;
   player2?: {
     id: string;
     display_name: string | null;
     username: string | null;
+    full_name: string | null;
     avatar_url: string | null;
   } | null;
   winner?: {
     id: string;
     display_name: string | null;
     username: string | null;
+    full_name: string | null;
     avatar_url: string | null;
   } | null;
 }
@@ -49,34 +60,54 @@ export const useTournamentMatches = (tournamentId: string) => {
           status,
           match_date,
           round,
+          round_number,
+          match_number,
+          bracket_type,
+          bracket_group,
+          bracket_format,
+          player1_score,
+          player2_score,
+          is_final,
+          is_third_place,
           player1:users!player1_id(
             id,
             display_name,
             username,
+            full_name,
             avatar_url
           ),
           player2:users!player2_id(
             id,
             display_name,
             username,
+            full_name,
             avatar_url
           ),
           winner:users!winner_id(
             id,
             display_name,
             username,
+            full_name,
             avatar_url
           )
         `)
         .eq("tournament_id", tournamentId)
-        .order("round", { ascending: true })
-        .order("match_date", { ascending: true });
+        .order("round_number", { ascending: true })
+        .order("match_number", { ascending: true });
 
       if (error) {
         throw error;
       }
 
-      return data as any[]; // Will fix with proper typing later
+      // Map data to proper types
+      const matches = (data || []).map(match => ({
+        ...match,
+        round: Number(match.round_number) || 0,
+        round_number: Number(match.round_number) || 0,
+        match_number: match.match_number || 0
+      }));
+
+      return matches as TournamentMatch[];
     },
     enabled: !!tournamentId,
     staleTime: 2 * 60 * 1000, // 2 minutes - matches change more frequently

@@ -19,8 +19,8 @@ export const getRankColor = (rank: string | null, rankSystem?: RankSystem[]): st
   return rankData?.color_hex || '#FFD700';
 };
 
-export const getDisplayName = (displayName: string | null, username: string | null): string => {
-  return displayName || username || 'Unknown Player';
+export const getDisplayName = (displayName: string | null, username: string | null, fullName?: string | null): string => {
+  return displayName || fullName || username || 'Unknown Player';
 };
 
 export const formatDate = (dateString: string): string => {
