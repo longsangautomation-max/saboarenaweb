@@ -1,8 +1,11 @@
+# SABO ARENA - Advanced SEO Configuration
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
-User-agent: Bingbot
+User-agent: Bingbot  
 Allow: /
+Crawl-delay: 1
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +15,15 @@ Allow: /
 
 User-agent: *
 Allow: /
+Crawl-delay: 2
+
+# Sitemaps
+Sitemap: https://saboarena.com/sitemap-index.xml
+Sitemap: https://saboarena.com/sitemap.xml
+Sitemap: https://saboarena.com/sitemap-static.xml
+Sitemap: https://saboarena.com/sitemap-users.xml
+Sitemap: https://saboarena.com/sitemap-matches.xml
+Sitemap: https://saboarena.com/sitemap-news.xml
+
+# Additional SEO
+Host: https://saboarena.com

@@ -1,0 +1,19 @@
+{
+  "startDate": "2025-11-11T12:38:09.755Z",
+  "indexingEvents": [],
+  "trafficData": [
+    {
+      "date": "2025-11-11",
+      "totalPages": 314,
+      "submittedUrls": 192,
+      "userPages": 123,
+      "matchPages": 170,
+      "newsPages": 7,
+      "estimatedIndexed": 0,
+      "indexingProgress": 0,
+      "timestamp": "2025-11-11T12:38:11.804Z"
+    }
+  ],
+  "keywordTracking": [],
+  "lastCheck": null
+}

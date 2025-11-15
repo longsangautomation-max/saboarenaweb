@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://saboarena.com/sitemap-static.xml</loc>
+    <lastmod>2025-11-11</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://saboarena.com/sitemap-users.xml</loc>
+    <lastmod>2025-11-11</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://saboarena.com/sitemap-matches.xml</loc>
+    <lastmod>2025-11-11</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://saboarena.com/sitemap-news.xml</loc>
+    <lastmod>2025-11-11</lastmod>
+  </sitemap>
+</sitemapindex>

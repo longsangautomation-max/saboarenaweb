@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppDownloadModalProvider } from "@/contexts/AppDownloadModalContext";
@@ -12,6 +13,7 @@ import Rankings from "./pages/Rankings";
 import TournamentDetails from "./pages/TournamentDetails";
 import ClubDirectory from "./pages/ClubDirectory";
 import MyProfile from "./pages/MyProfile";
+import Blog from "./pages/Blog";
 import NewsDetail from "./pages/NewsDetail";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -31,16 +33,18 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <AppDownloadModalProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+    <HelmetProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppDownloadModalProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/rankings" element={<Rankings />} />
+                <Route path="/blog" element={<Blog />} />
                 <Route path="/tournaments/:id" element={<TournamentDetails />} />
                 <Route path="/tournament/:id/full" element={<FullTournamentBracket />} />
                 <Route path="/clubs" element={<ClubDirectory />} />
@@ -69,6 +73,7 @@ const App = () => (
         </AppDownloadModalProvider>
       </AuthProvider>
     </LanguageProvider>
+    </HelmetProvider>
   </QueryClientProvider>
 );
 

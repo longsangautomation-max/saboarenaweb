@@ -160,8 +160,8 @@ export const BILLIARD_IMAGES = {
       credit: 'Unsplash'
     },
     {
-      url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&q=80',
-      description: 'Dramatic lighting on table',
+      url: 'https://images.unsplash.com/photo-1511688878353-3a2f5be94cd7?w=1200&q=80',
+      description: 'Pool balls on green billiards table',
       credit: 'Unsplash'
     },
     {

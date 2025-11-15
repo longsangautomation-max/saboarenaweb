@@ -26,6 +26,7 @@ dist-ssr
 
 # Tokens and secrets
 .env
+.env.*
 TOKENS.md
 *.token
 secrets.txt

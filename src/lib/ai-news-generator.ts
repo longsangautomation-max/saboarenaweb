@@ -304,18 +304,43 @@ function createSlug(title: string): string {
 }
 
 /**
- * Tạo excerpt từ content
+ * Tạo excerpt từ content - SEO Optimized (120-160 chars)
  */
 function extractExcerpt(content: string): string {
-  // Lấy paragraph đầu tiên (bỏ headers)
-  const lines = content.split('\n').filter(line => !line.startsWith('#'));
-  const firstParagraph = lines.find(line => line.trim().length > 50);
+  // Lấy paragraph đầu tiên (bỏ headers, images, links)
+  const lines = content.split('\n')
+    .filter(line => !line.startsWith('#'))
+    .filter(line => !line.startsWith('!['))
+    .filter(line => !line.startsWith('*'))
+    .filter(line => line.trim().length > 50);
+  
+  const firstParagraph = lines.find(line => line.trim().length > 80);
   
   if (firstParagraph) {
-    return firstParagraph.substring(0, 200) + '...';
+    // SEO best practice: 120-160 chars cho meta description
+    const cleaned = firstParagraph.replace(/[*_#()]/g, '').trim();
+    
+    if (cleaned.length <= 160) {
+      return cleaned;
+    }
+    
+    // Cắt ở câu gần nhất với 150 chars
+    const nearestSentence = cleaned.substring(0, 150);
+    const lastPeriod = nearestSentence.lastIndexOf('.');
+    const lastExclaim = nearestSentence.lastIndexOf('!');
+    const lastQuestion = nearestSentence.lastIndexOf('?');
+    const lastSentenceEnd = Math.max(lastPeriod, lastExclaim, lastQuestion);
+    
+    if (lastSentenceEnd > 100) {
+      return cleaned.substring(0, lastSentenceEnd + 1);
+    }
+    
+    return cleaned.substring(0, 150) + '...';
   }
   
-  return content.substring(0, 200) + '...';
+  // Fallback: lấy text đầu tiên đủ dài
+  const cleanContent = content.replace(/[#*_()!]/g, '').replace(/\n/g, ' ').trim();
+  return cleanContent.substring(0, 150) + '...';
 }
 
 /**

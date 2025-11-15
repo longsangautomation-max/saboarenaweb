@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Helmet } from "react-helmet-async";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNewsDetail } from "@/hooks/useNews";
 import Navigation from "@/components/Navigation";
@@ -101,9 +102,73 @@ const NewsDetail = () => {
 
   const title = language === "vi" ? article.title : (article.title_en || article.title);
   const content = language === "vi" ? article.content : (article.content_en || article.content);
+  const excerpt = language === "vi" ? article.excerpt : (article.excerpt_en || article.excerpt);
+  const canonicalUrl = `https://saboarena.com/news/${article.slug}`;
+  const imageUrl = article.cover_image_url || "https://saboarena.com/favicon.png";
 
   return (
     <>
+      <Helmet>
+        {/* Primary Meta Tags */}
+        <title>{title} | SABO ARENA - Nền Tảng Bi-a #1 Việt Nam</title>
+        <meta name="title" content={`${title} | SABO ARENA`} />
+        <meta name="description" content={excerpt} />
+        <link rel="canonical" href={canonicalUrl} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={excerpt} />
+        <meta property="og:image" content={imageUrl} />
+        <meta property="og:site_name" content="SABO ARENA" />
+        <meta property="article:published_time" content={article.published_at} />
+        <meta property="article:section" content={getCategoryName(article.category)} />
+        
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content={canonicalUrl} />
+        <meta property="twitter:title" content={title} />
+        <meta property="twitter:description" content={excerpt} />
+        <meta property="twitter:image" content={imageUrl} />
+        <meta name="twitter:site" content="@SABOArena" />
+        
+        {/* Additional SEO */}
+        <meta name="robots" content="index, follow" />
+        <meta name="language" content={language === "vi" ? "Vietnamese" : "English"} />
+        <meta name="author" content="SABO ARENA Team" />
+        <meta name="keywords" content={`bi-a, billiards, sabo arena, ${getCategoryName(article.category).toLowerCase()}, giải đấu bi-a, thi đấu bi-a`} />
+        
+        {/* Structured Data - Article Schema */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": title,
+            "description": excerpt,
+            "image": imageUrl,
+            "datePublished": article.published_at,
+            "dateModified": article.updated_at,
+            "author": {
+              "@type": "Organization",
+              "name": "SABO ARENA",
+              "url": "https://saboarena.com"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "SABO ARENA",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://saboarena.com/favicon.png"
+              }
+            },
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": canonicalUrl
+            }
+          })}
+        </script>
+      </Helmet>
       <Navigation />
       <div className="min-h-screen bg-gradient-to-b from-background to-slate-900 pt-20">
         <article className="container mx-auto px-4 py-12 max-w-4xl">
